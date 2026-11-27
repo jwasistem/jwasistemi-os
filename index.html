@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Asignaciones">
 <link rel="apple-touch-icon" href="icon.png">
-<!-- ======================================= -->
+<!-- ======================================= -->G
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- SDK de OneSignal para iOS -->
@@ -521,13 +521,16 @@ async function installPwa() {
 // ============================================================
 //  REGISTRO DEL SERVICE WORKER (PWA / OneSignal)
 // ============================================================
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
-      .then(reg => console.log('✅ Service Worker (OneSignal) registrado'))
-      .catch(err => console.error('❌ Error registrando SW:', err));
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "3796cda4-ebcf-4288-8139-96e3a5dcf3bc", 
+      notifyButton: { enable: false },
+      allowLocalhostAsSecureOrigin: true,
+      // 👇 Forzamos los nombres de los archivos
+      serviceWorkerParam: { scope: "./" },
+      serviceWorkerPath: "./OneSignalSDKWorker.js" 
+    });
   });
-}
 
 // ============================================================
 //  PUSH (ONE SIGNAL)
