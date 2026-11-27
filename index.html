@@ -876,7 +876,7 @@ async function installPwa() {
 // ============================================================
 //  INICIALIZACIÓN ÚNICA DE ONESIGNAL (SDK WEB v16)
 // ============================================================
-// Esta aplicación está publicada en GitHub Pages bajo /jwasistem-ios/.
+// Esta aplicación está publicada en GitHub Pages bajo /jwasistemi-os/.
 // El path del worker se expresa desde la raíz del dominio y el scope
 // limita el worker a esta aplicación.
 window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -892,12 +892,26 @@ window.OneSignalDeferred.push(async function(OneSignal) {
       notifyButton: { enable: false },
       allowLocalhostAsSecureOrigin: true,
       autoResubscribe: true,
-      serviceWorkerPath: "jwasistem-ios/OneSignalSDKWorker.js",
-      serviceWorkerParam: { scope: "/jwasistem-ios/" }
+      serviceWorkerPath: "/jwasistemi-os/OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: "/jwasistemi-os/" }
     });
 
     window.OneSignalInstance = OneSignal;
     console.info('[OneSignal] SDK inicializado correctamente');
+
+    // Diagnóstico: confirma qué Service Worker quedó registrado y bajo qué scope.
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      console.info('[OneSignal] Service Workers registrados:', registrations.map(reg => ({
+        scope: reg.scope,
+        active: reg.active ? reg.active.scriptURL : null,
+        installing: reg.installing ? reg.installing.scriptURL : null,
+        waiting: reg.waiting ? reg.waiting.scriptURL : null
+      })));
+    } catch (swError) {
+      console.error('[OneSignal] No se pudieron consultar los Service Workers:', swError);
+    }
+
     resolveOneSignalReady({ instance: OneSignal, error: null });
   } catch (error) {
     window.OneSignalInitError = error;
