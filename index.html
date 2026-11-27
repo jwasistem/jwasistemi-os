@@ -903,13 +903,57 @@ OneSignalDeferred.push(async function(OneSignal) {
 //  PUSH (ONE SIGNAL)
 // ============================================================
 async function subscribeToPush() {
+  // Esperar a que el SDK de OneSignal esté listo (usamos la deferred queue)
+  const OneSignal = await new Promise(resolve => {
+    window.OneSignalDeferred.push(async (os) => resolve(os));
+  });
+
+  // En iOS, el push web SOLO funciona si la app está instalada como PWA.
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isIOS && !isStandalone) {
+    toast('En iPhone debes instalar la app (Añadir a pantalla de inicio) para recibir notificaciones', 'info');
+    return false;
+  }
+
   try {
-    window.OneSignalDeferred.push(async function(OneSignal) {
-      await OneSignal.Notifications.requestPermission();
-      await OneSignal.login(me.id);
-      pushSubscribed = true;
-    });
-  } catch (e) { console.error('[OneSignal] Error:', e); }
+    // 1) Pedir permiso al navegador
+    await OneSignal.Notifications.requestPermission();
+    if (OneSignal.Notifications.permission === false) {
+      toast('Permiso de notificaciones denegado. Actívalo en los Ajustes del navegador/Safari.', 'error');
+      return false;
+    }
+
+    // 2) Suscribir al push: crea el player en OneSignal con un subscription id.
+    //    En la v16 del SDK se hace con optIn() (PushSubscription).
+    if (OneSignal.User && OneSignal.User.PushSubscription && typeof OneSignal.User.PushSubscription.optIn === 'function') {
+      await OneSignal.User.PushSubscription.optIn();
+    }
+
+    // 3) Esperar a que exista un subscription id (comprobante de que hay player suscrito)
+    let subId = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
+    if (!subId) {
+      for (let i = 0; i < 6; i++) {
+        await new Promise(r => setTimeout(r, 500));
+        subId = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
+        if (subId) break;
+      }
+    }
+    if (!subId) {
+      toast('No se pudo registrar el dispositivo. Reabre la app (como PWA) e inténtalo de nuevo.', 'error');
+      return false;
+    }
+
+    // 4) Asociar el external_id (Supabase user id) con el player
+    await OneSignal.login(me.id);
+    console.log('[OneSignal] vinculado. subscription id:', subId);
+    pushSubscribed = true;
+    return true;
+  } catch (e) {
+    console.error('[OneSignal] subscribe error:', e);
+    toast('No se pudo activar las notificaciones: ' + (e.message || e), 'error');
+    return false;
+  }
 }
 
 async function sendImmediatePush(assignmentId) {
@@ -922,6 +966,7 @@ async function sendImmediatePush(assignmentId) {
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+  // La nueva respuesta incluye: { ok, sent, reason?, message? }
   return json;
 }
 
@@ -969,9 +1014,18 @@ async function renderPushCard() {
 
 async function enablePush() {
   const btn = $('push-btn'); btn.disabled = true; btn.textContent = 'Activando…';
-  try { await sb.from('people').update({ push_enabled: true }).eq('id', me.id); me.profile.push_enabled = true; await subscribeToPush();
-    toast('Notificaciones activadas', 'success');
-    pushNotif({title:'Notificaciones activadas',description:'Recibirás recordatorios automáticos de tus asignaciones.',type:'success'});
+  try {
+    const ok = await subscribeToPush();
+    if (ok) {
+      // Solo marcamos push_enabled cuando confirmamos que hay un player suscrito
+      await sb.from('people').update({ push_enabled: true }).eq('id', me.id);
+      me.profile.push_enabled = true;
+      toast('Notificaciones activadas', 'success');
+      pushNotif({title:'Notificaciones activadas',description:'Recibirás recordatorios automáticos de tus asignaciones.',type:'success'});
+    } else {
+      // No se suscribió (iOS sin PWA, permiso denegado, etc.)
+      toast('No se pudieron activar las notificaciones en este dispositivo', 'error');
+    }
   } catch (e) { toast('Error: ' + e.message, 'error'); }
   finally { btn.disabled = false; setTimeout(renderPushCard, 800); }
 }
@@ -1119,7 +1173,14 @@ async function bootUser(){
     initRealtime();
     hideLoader();
     showView('view-dashboard');
-    if (me.profile.push_enabled !== false) subscribeToPush().catch(()=>{});
+    // Si el usuario ya tenía push habilitado, re-vinculamos el external_id
+    // (no pedimos permiso de nuevo: el SDK ya lo gestiona con el SW instalado).
+    if (me.profile.push_enabled !== false) {
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        try { await OneSignal.login(me.id); pushSubscribed = true; }
+        catch(e){ console.error('[OneSignal] login on boot:', e); }
+      });
+    }
     checkPwaInstallability();
     renderNotifBadge();
   } catch(err){
@@ -1260,8 +1321,16 @@ async function loadAdminAsgs(){
       btn.disabled = true; btn.innerHTML = icon('hourglass');
       try {
         const r = await sendImmediatePush(btn.dataset.notify);
-        if (r.ok) { toast(`Enviado a OneSignal`, 'success'); pushNotif({title:'Notificación enviada',description:'Se envió un push inmediato.',type:'success',assignmentId:btn.dataset.notify}); }
-        else toast('Falló: ' + (r.error || 'sin detalles'), 'error');
+        // La nueva edge function devuelve { ok, sent, reason?, message? }
+        if (r.ok && r.sent) {
+          toast('Enviado a OneSignal', 'success');
+          pushNotif({title:'Notificación enviada',description:'Se envió un push inmediato.',type:'success',assignmentId:btn.dataset.notify});
+        } else if (r.ok && !r.sent) {
+          // not_subscribed o push_disabled — mensaje claro del backend
+          toast(r.message || 'El usuario no tiene notificaciones activas', 'info');
+        } else {
+          toast('Falló: ' + (r.error || 'sin detalles'), 'error');
+        }
         loadAdminAsgs();
       } catch (e) { toast('Error: ' + e.message, 'error'); }
       finally { btn.disabled = false; btn.innerHTML = icon('bell'); }
@@ -1584,8 +1653,15 @@ $('form-asg').addEventListener('submit',async e=>{
   if (savedId) {
     try {
       const result = await sendImmediatePush(savedId);
-      if (result.ok) { toast(`Notificación enviada vía OneSignal`, 'success'); pushNotif({title:'Notificación enviada',description:'Se envió un push al asignado.',type:'success',assignmentId:savedId}); }
-      else toast('Error al enviar: ' + (result.error || 'desconocido'), 'error');
+      if (result.ok && result.sent) {
+        toast('Notificación enviada vía OneSignal', 'success');
+        pushNotif({title:'Notificación enviada',description:'Se envió un push al asignado.',type:'success',assignmentId:savedId});
+      } else if (result.ok && !result.sent) {
+        // not_subscribed o push_disabled — informativo, no es error
+        toast(result.message || 'El usuario no tiene notificaciones activas', 'info');
+      } else {
+        toast('Error al enviar: ' + (result.error || 'desconocido'), 'error');
+      }
     } catch (e) { toast('Guardado. Error al enviar push: ' + e.message, 'error'); }
   }
 });
