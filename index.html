@@ -15,6 +15,9 @@
 <!-- ======================================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- SDK de OneSignal para iOS -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
 <style>
 :root{
   --bg:#f4f4f5; --bg2:#e9e9eb; --card:#fff;
@@ -103,27 +106,8 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
 .check-pending   { color:#d4d4d8; font-size:14px; margin-left:4px; }
 
 /* Botones de acción de usuario */
-.user-actions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
-.user-actions button {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--text);
-  cursor: pointer;
-  white-space: nowrap;
-}
+.user-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.user-actions button { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; white-space: nowrap; }
 .user-actions button:hover { background: var(--bg2); }
 .user-actions button.danger { color: #b91c1c; border-color: #fecaca; }
 .user-actions button.danger:hover { background: #fef2f2; }
@@ -254,7 +238,7 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
     <button class="menu-btn" onclick="showView('view-dashboard')">Volver</button>
   </div>
 
-  <!-- Tarjeta Push (Ahora va primero) -->
+  <!-- Tarjeta Push -->
   <div id="push-card" class="settings-card" style="display:none">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
       <div id="push-icon" style="font-size:20px">🔔</div>
@@ -266,7 +250,7 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
     <button class="settings-btn" id="push-btn" style="margin-top:12px">…</button>
   </div>
 
-  <!-- Botón Instalar PWA (Ahora va segundo) -->
+  <!-- Botón Instalar PWA -->
   <div class="settings-card" id="pwa-card" style="display:none">
     <div class="settings-card-title">📱 Instalar Aplicación</div>
     <div class="settings-card-desc" id="pwa-desc">Instala la app en tu pantalla de inicio para acceder más rápido y a pantalla completa.</div>
@@ -401,13 +385,26 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
   </div>
 </div>
 
+<!-- Inicializar OneSignal (PON TU APP ID AQUÍ) -->
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "TU_ONESIGNAL_APP_ID", // <--- ⚠️ REEMPLAZA ESTO POR TU APP ID
+      safari_web_id: "web.onesignal.auto.TU_SAFARI_ID", // <--- (Opcional) Si OneSignal te lo da
+      notifyButton: { enable: false },
+      allowLocalhostAsSecureOrigin: true,
+    });
+  });
+</script>
+
 <script>
 // ============================================================
 //  CONFIG
 // ============================================================
 const SUPABASE_URL='https://glgostqeocepewpsqsbm.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsZ29zdHFlb2NlcGV3cHNxc2JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUyNjUwODQsImV4cCI6MjExMDg0MTA4NH0.pbBk4KZV3TBnU4WXoXFOWD-P4AsZZeGMG_5oXcbS3Z4';
-const VAPID_PUBLIC_KEY = 'BIJjPjwCCemKuo2ZIVRIdJT34iPC30mOgxYt7sFt8Ad_QYtJZF_Dry3635m_paLAhmYogcOaJS4cnkz4eJtYAIQ';
+// Nota: Ya no usamos VAPID_PUBLIC_KEY aquí.
 
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
   auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
@@ -475,14 +472,12 @@ function checkPwaInstallability() {
   const pwaDesc = $('pwa-desc');
   const iosHint = $('ios-install-hint');
   
-  // Si ya está instalada, ocultar la tarjeta
   if (isStandalone) {
     pwaCard.style.display = 'none';
     iosHint.style.display = 'none';
     return;
   }
 
-  // Si es iOS, mostrar instrucciones manuales
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   if (isIOS) {
     pwaCard.style.display = 'none';
@@ -490,16 +485,13 @@ function checkPwaInstallability() {
     return;
   }
 
-  // Si no está instalada y no es iOS, mostrar la tarjeta
   pwaCard.style.display = 'flex';
   iosHint.style.display = 'none';
 
-  // Verificar si el navegador tiene listo el prompt nativo
   if (deferredPrompt) {
     pwaBtn.textContent = 'Instalar App';
     pwaDesc.textContent = 'Instala la app en tu pantalla de inicio para acceder más rápido y a pantalla completa.';
   } else {
-    // Fallback: El navegador no ha disparado el evento, mostrar instrucciones
     pwaBtn.textContent = 'Cómo instalar manualmente';
     pwaDesc.textContent = 'Tu navegador no muestra el botón automático. Puedes instalarla manualmente desde el menú.';
   }
@@ -514,7 +506,6 @@ async function installPwa() {
     }
     deferredPrompt = null;
   } else {
-    // Instrucciones manuales si no está el prompt
     const esEdge = navigator.userAgent.includes("Edg");
     const esChrome = navigator.userAgent.includes("Chrome");
     let msg = "Para instalar esta aplicación:\n\n";
@@ -528,68 +519,38 @@ async function installPwa() {
 }
 
 // ============================================================
-//  PWA - REGISTRO DEL SERVICE WORKER
+//  REGISTRO DEL SERVICE WORKER (PWA / OneSignal)
 // ============================================================
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js', { scope: './' })
-      .then(reg => console.log('✅ Service Worker registrado para PWA'))
+      .then(reg => console.log('✅ Service Worker (OneSignal) registrado'))
       .catch(err => console.error('❌ Error registrando SW:', err));
   });
 }
 
 // ============================================================
-//  PUSH
+//  PUSH (ONE SIGNAL)
 // ============================================================
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-  return outputArray;
-}
-
-async function subscribeToPush(){
+async function subscribeToPush() {
   try {
-    if (pushSubscribed) return;
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-    if (Notification.permission === 'denied') return;
-
-    const registration = await navigator.serviceWorker.ready;
-    let permission = Notification.permission;
-    if (permission === 'default') permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
-
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-    }
-
-    const sub = subscription.toJSON();
-    const { error } = await sb.from('push_subscriptions').upsert({
-      person_id: me.id,
-      endpoint: sub.endpoint,
-      p256dh: sub.keys.p256dh,
-      auth: sub.keys.auth,
-      user_agent: navigator.userAgent
-    }, { onConflict: 'endpoint' });
-
-    if (error) return console.error('[push]', error.message);
-    pushSubscribed = true;
-    console.log('✅ Push suscrito');
+    window.OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.Notifications.requestPermission();
+      await OneSignal.login(me.id);
+      console.log('✅ OneSignal vinculado con Supabase User ID');
+      pushSubscribed = true;
+    });
   } catch (e) {
-    console.error('[push] error:', e);
+    console.error('[OneSignal] Error:', e);
   }
 }
 
 async function sendImmediatePush(assignmentId) {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) throw new Error('sin sesión');
-  const res = await fetch(SUPABASE_URL + '/functions/v1/send-push', {
+  
+  // ⚠️ AQUÍ APUNTAMOS A LA NUEVA FUNCIÓN DE IOS
+  const res = await fetch(SUPABASE_URL + '/functions/v1/send-push-ios', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -604,19 +565,23 @@ async function sendImmediatePush(assignmentId) {
 }
 
 // ============================================================
-//  TARJETA PUSH
+//  TARJETA PUSH (ADAPTADA PARA ONE SIGNAL)
 // ============================================================
 async function checkPushState() {
-  if (!('Notification' in window) || !('PushManager' in window) || !('serviceWorker' in navigator)) return 'unsupported';
+  if (!('Notification' in window)) return 'unsupported';
+  
+  // Si el navegador soporta OneSignal, revisamos su estado
+  if (window.OneSignal && window.OneSignal.Notifications) {
+    const permission = await window.OneSignal.Notifications.permission;
+    if (permission === false) return 'blocked';
+    const hasPermission = await window.OneSignal.Notifications.getPermissionStatus();
+    if (hasPermission === 'default') return 'default';
+    return 'active';
+  }
+  
+  // Fallback
   if (Notification.permission === 'denied') return 'blocked';
   if (Notification.permission === 'default') return 'default';
-  const reg = await navigator.serviceWorker.getRegistration();
-  if (!reg) return 'no-sw';
-  const sub = await reg.pushManager.getSubscription();
-  if (!sub) return 'no-sub';
-  if (!me?.id) return 'no-session';
-  const { data } = await sb.from('push_subscriptions').select('id').eq('person_id', me.id).limit(1);
-  if (!data || data.length === 0) return 'no-db';
   return 'active';
 }
 
@@ -636,15 +601,11 @@ async function renderPushCard() {
       subtitle.textContent = 'Este navegador no soporta notificaciones'; btn.style.display = 'none'; break;
     case 'blocked':
       card.classList.add('blocked'); icon.textContent = '🔕'; title.textContent = 'Notificaciones bloqueadas';
-      subtitle.textContent = 'Permítelas en la configuración de tu navegador';
+      subtitle.textContent = 'Permítelas en los ajustes del sistema';
       btn.textContent = 'Cómo activar'; btn.classList.add('blocked'); btn.onclick = showBlockedInstructions; break;
     case 'default':
       icon.textContent = '🔔'; title.textContent = 'Notificaciones desactivadas';
       subtitle.textContent = 'Actívalas para recibir recordatorios';
-      btn.textContent = 'Activar notificaciones'; btn.classList.add('primary'); btn.onclick = enablePush; break;
-    case 'no-sw': case 'no-sub': case 'no-db':
-      icon.textContent = '🔔'; title.textContent = 'Notificaciones pendientes';
-      subtitle.textContent = 'Toca para activar en este dispositivo';
       btn.textContent = 'Activar notificaciones'; btn.classList.add('primary'); btn.onclick = enablePush; break;
     case 'active':
       card.classList.add('active'); icon.textContent = '✅'; title.textContent = 'Notificaciones activas';
@@ -658,14 +619,10 @@ async function enablePush() {
   try {
     await sb.from('people').update({ push_enabled: true }).eq('id', me.id);
     me.profile.push_enabled = true;
-    pushSubscribed = false;
     await subscribeToPush();
-    const state = await checkPushState();
-    if (state === 'active') toast('Notificaciones activadas', 'success');
-    else if (state === 'blocked') toast('Permiso bloqueado', 'error');
-    else toast('No se pudo suscribir', 'error');
+    toast('Notificaciones activadas', 'success');
   } catch (e) { toast('Error: ' + e.message, 'error'); }
-  finally { btn.disabled = false; await renderPushCard(); }
+  finally { btn.disabled = false; setTimeout(renderPushCard, 1000); }
 }
 
 async function disablePush() {
@@ -674,21 +631,18 @@ async function disablePush() {
   try {
     await sb.from('people').update({ push_enabled: false }).eq('id', me.id);
     me.profile.push_enabled = false;
-    const reg = await navigator.serviceWorker.getRegistration();
-    if (reg) { const sub = await reg.pushManager.getSubscription(); if (sub) await sub.unsubscribe(); }
-    await sb.from('push_subscriptions').delete().eq('person_id', me.id);
-    pushSubscribed = false;
+    if (window.OneSignal) {
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.logout();
+      });
+    }
     toast('Notificaciones desactivadas', 'success');
   } catch (e) { toast('Error: ' + e.message, 'error'); }
-  finally { btn.disabled = false; await renderPushCard(); }
+  finally { btn.disabled = false; setTimeout(renderPushCard, 1000); }
 }
 
 function showBlockedInstructions() {
-  const esiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const t = esiOS
-    ? 'iPhone:\n1. Ajustes del teléfono\n2. Notificaciones\n3. Busca la app (si la instalaste) o Safari\n4. Permitir notificaciones'
-    : 'Android/PC:\n1. Candado junto a la URL → Notificaciones → Permitir\n2. Recarga la página\n3. En Brave: brave://settings/privacy → "Use Google services for push messaging"';
-  alert(t);
+  alert('Si estás en iPhone:\n\n1. Abre los Ajustes de tu iPhone.\n2. Ve a Notificaciones.\n3. Busca esta app (si la instalaste) o Safari.\n4. Permite las notificaciones.');
 }
 
 // ============================================================
@@ -962,9 +916,8 @@ async function loadAdminAsgs(){
       btn.disabled = true; btn.textContent = '⏳';
       try {
         const r = await sendImmediatePush(btn.dataset.notify);
-        if (r.sent > 0) toast(`Enviado a ${r.sent} dispositivo(s)`, 'success');
-        else if (r.total === 0) toast('La persona no tiene notificaciones activas', 'error');
-        else toast('Falló: ' + (r.errores?.[0]?.error || 'sin detalles'), 'error');
+        if (r.ok) toast(`Enviado a OneSignal`, 'success');
+        else toast('Falló: ' + (r.error || 'sin detalles'), 'error');
         loadAdminAsgs();
       } catch (e) { toast('Error: ' + e.message, 'error'); }
       finally { btn.disabled = false; btn.textContent = '🔔'; }
@@ -1290,10 +1243,9 @@ $('form-asg').addEventListener('submit',async e=>{
   if (savedId) {
     try {
       const result = await sendImmediatePush(savedId);
-      if (result.sent > 0) toast(`Notificación enviada (${result.sent} dispositivo${result.sent>1?'s':''})`, 'success');
-      else if (result.total === 0) toast('La persona no tiene notificaciones activas', 'error');
-      else if (result.errores?.length) toast('No se pudo enviar: ' + result.errores[0].error, 'error');
-    } catch (e) { toast('Guardado. Error al enviar push', 'error'); }
+      if (result.ok) toast(`Notificación enviada vía OneSignal`, 'success');
+      else toast('Error al enviar: ' + (result.error || 'desconocido'), 'error');
+    } catch (e) { toast('Guardado. Error al enviar push: ' + e.message, 'error'); }
   }
 });
 
@@ -1322,7 +1274,6 @@ function initRealtime(){
         loadDashboard();
         if(payload.eventType==='INSERT'){
           toast('Nueva asignación: '+payload.new.title,'success');
-          if(Notification.permission==='granted') new Notification('Nueva asignación',{body:payload.new.title});
         } else if(payload.eventType==='UPDATE'){
           toast('Asignación actualizada: '+payload.new.title,'success');
         }
