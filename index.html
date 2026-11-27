@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -19,36 +19,90 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <style>
+/* ============================================================
+   TEMA — Variables CSS (claro / oscuro)
+   ============================================================ */
 :root{
-  --bg:#f4f4f5; --bg2:#e9e9eb; --card:#fff;
+  --bg:#f4f4f5; --bg2:#e9e9eb; --card:#ffffff;
   --text:#18181b; --muted:#71717a; --line:#e4e4e7;
-  --accent:#18181b; --accent-fg:#fff;
+  --accent:#18181b; --accent-fg:#ffffff;
+  --hover:#2f2f33;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.12);
   --radius:14px;
+  --radius-sm:10px;
+  --radius-lg:18px;
+  --success:#047857; --success-bg:#ecfdf5; --success-fg:#065f46;
+  --danger:#b91c1c;  --danger-bg:#fef2f2;  --danger-fg:#991b1b;
+  --warn:#b45309;   --warn-bg:#fffbeb;    --warn-fg:#92400e;
+  --info:#1d4ed8;   --info-bg:#eff6ff;    --info-fg:#1e40af;
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
 }
+[data-theme="dark"]{
+  --bg:#09090b; --bg2:#18181b; --card:#1c1c1f;
+  --text:#fafafa; --muted:#a1a1aa; --line:#27272a;
+  --accent:#fafafa; --accent-fg:#18181b;
+  --hover:#e4e4e7;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.3);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.5);
+  --success:#34d399; --success-bg:#064e3b; --success-fg:#6ee7b7;
+  --danger:#f87171;  --danger-bg:#7f1d1d;  --danger-fg:#fca5a5;
+  --warn:#fbbf24;   --warn-bg:#78350f;    --warn-fg:#fcd34d;
+  --info:#60a5fa;   --info-bg:#1e3a8a;    --info-fg:#93c5fd;
+}
+
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5; padding-bottom: env(safe-area-inset-bottom);}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5;
+  padding-bottom:env(safe-area-inset-bottom);
+  transition:background-color .25s ease,color .25s ease;
+}
+::selection{background:var(--accent);color:var(--accent-fg)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+/* Loader */
 #loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:1000;transition:opacity .35s}
 #loader.hidden{opacity:0;pointer-events:none}
 .spinner{width:32px;height:32px;border:2.5px solid var(--line);border-top-color:var(--text);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loader p{color:var(--muted);font-size:13px}
-.view{min-height:100vh;display:none;padding:24px 20px 100px;max-width:480px;margin:0 auto;animation:fadeUp .35s}
+
+/* Views */
+.view{min-height:100vh;display:none;padding:24px 20px 100px;max-width:560px;margin:0 auto;animation:fadeUp .35s}
 .view.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Typography */
 h1{font-size:24px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
 h2{font-size:18px;font-weight:600;letter-spacing:-.01em}
+h3{font-size:15px;font-weight:600}
 .subtitle{color:var(--muted);font-size:14px;margin-bottom:28px}
 .label{font-size:13px;font-weight:500;color:var(--muted);margin-bottom:6px;display:block}
+.hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+
+/* Form fields */
 .field{margin-bottom:16px}
-input,select,textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-family:inherit;font-size:15px;color:var(--text);transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--text);box-shadow:0 0 0 3px rgba(24,24,27,.06)}
-input:disabled{background:var(--bg2);color:var(--muted)}
+input,select,textarea{
+  width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);
+  background:var(--card);font-family:inherit;font-size:15px;color:var(--text);
+  transition:border-color .15s,box-shadow .15s,background .25s;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--text);box-shadow:0 0 0 3px rgba(24,24,27,.08)}
+input:disabled,select:disabled{background:var(--bg2);color:var(--muted);cursor:not-allowed}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+textarea{resize:vertical;font-family:inherit}
+
+/* Buttons */
 button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
-.btn{width:100%;padding:13px;background:var(--accent);color:var(--accent-fg);border-radius:10px;font-size:15px;font-weight:500}
-.btn:hover{background:#2f2f33}
+.btn{width:100%;padding:13px;background:var(--accent);color:var(--accent-fg);border-radius:var(--radius-sm);font-size:15px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{background:var(--hover)}
 .btn:active{transform:scale(.99)}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
@@ -56,99 +110,291 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
 .btn-sm{padding:9px 14px;font-size:14px;width:auto}
 .btn-wa{background:#25d366;color:#fff}
 .btn-wa:hover{background:#1eb257}
-.card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:12px;border:1px solid var(--line)}
-.card-title{font-weight:600;font-size:15px;margin-bottom:6px}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border:1px solid var(--line)}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn .icon,.btn-sm .icon,.menu-btn .icon,.icon-btn .icon{width:16px;height:16px;flex-shrink:0}
+
+/* Icon button */
+.icon-btn{background:transparent;border:1px solid var(--line);width:36px;height:36px;border-radius:9px;color:var(--text);display:inline-flex;align-items:center;justify-content:center;position:relative}
+.icon-btn:hover{background:var(--bg2)}
+
+/* Menu / small buttons */
+.menu-btn{background:transparent;border:1px solid var(--line);padding:8px 12px;border-radius:9px;font-size:13px;color:var(--text);display:inline-flex;align-items:center;gap:6px}
+.menu-btn:hover{background:var(--bg2)}
+
+/* Card */
+.card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:12px;border:1px solid var(--line);transition:box-shadow .2s,transform .15s}
+.card:hover{box-shadow:var(--shadow-lg)}
+.card-title{font-weight:600;font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .card-meta{color:var(--muted);font-size:13px}
 .card-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
-.badge{font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
-.badge-warn{background:#fffbeb;color:#b45309}
-.badge-danger{background:#fef2f2;color:#b91c1c}
-.badge-info{background:#eff6ff;color:#1d4ed8}
+.card-sub{font-size:12px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.card-sub .icon{width:12px;height:12px;color:var(--muted)}
+
+/* Badges */
+.badge{font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;display:inline-flex;align-items:center;gap:4px}
+.badge .icon{width:11px;height:11px}
+.badge-warn{background:var(--warn-bg);color:var(--warn-fg)}
+.badge-danger{background:var(--danger-bg);color:var(--danger-fg)}
+.badge-info{background:var(--info-bg);color:var(--info-fg)}
 .badge-neutral{background:var(--bg2);color:var(--muted)}
-.badge-success{background:#ecfdf5;color:#047857}
-.badge-inactive{background:#f4f4f5;color:#a1a1aa}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
-.menu-btn{background:transparent;border:1px solid var(--line);padding:6px 12px;border-radius:8px;font-size:13px;color:var(--muted)}
-.menu-btn:hover{background:var(--bg2)}
-.tabs{display:flex;gap:4px;background:var(--bg2);border-radius:10px;padding:4px;margin-bottom:20px;overflow-x:auto}
-.tab{flex:1;min-width:80px;padding:8px;text-align:center;border-radius:7px;font-size:12px;font-weight:500;color:var(--muted);background:transparent;cursor:pointer;white-space:nowrap}
-.tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.badge-success{background:var(--success-bg);color:var(--success-fg)}
+.badge-inactive{background:var(--bg2);color:var(--muted);opacity:.8}
+
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px;padding:14px 0;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px}
+.topbar h1{font-size:18px;margin:0}
+.topbar .muted{color:var(--muted);font-size:13px;margin:0}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:var(--bg2);border-radius:var(--radius-sm);padding:4px;margin-bottom:20px;overflow-x:auto}
+.tab{flex:1;min-width:80px;padding:8px;text-align:center;border-radius:7px;font-size:12px;font-weight:500;color:var(--muted);background:transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
+.tab .icon{width:14px;height:14px}
+.tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.tab .count{background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:999px;margin-left:2px}
+.tab .count.empty{display:none}
+
+/* Empty */
 .empty{text-align:center;padding:60px 20px;color:var(--muted)}
-.empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+.empty-icon{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:var(--bg2);margin-bottom:12px;color:var(--muted)}
+.empty-icon .icon{width:24px;height:24px}
+.empty p{font-size:14px}
+
+/* Toast */
 #toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:8px;width:calc(100% - 40px);max-width:420px;pointer-events:none}
-.toast{background:var(--text);color:var(--accent-fg);padding:14px 18px;border-radius:12px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.15);animation:toastIn .3s;pointer-events:auto}
-.toast.success{background:#047857}
-.toast.error{background:#b91c1c}
+.toast{background:var(--text);color:var(--bg);padding:14px 18px;border-radius:12px;font-size:14px;box-shadow:var(--shadow-lg);animation:toastIn .3s;pointer-events:auto;display:flex;align-items:center;gap:10px}
+.toast .icon{width:18px;height:18px;flex-shrink:0}
+.toast.success{background:var(--success);color:#fff}
+.toast.error{background:var(--danger);color:#fff}
+.toast.info{background:var(--info);color:#fff}
 @keyframes toastIn{from{opacity:0;transform:translateY(-8px)}}
-.fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--text);color:var(--accent-fg);font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:100}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:500}
-.modal-bg.active{display:flex}
+
+/* FAB */
+.fab{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));right:24px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-lg);z-index:100}
+.fab:hover{background:var(--hover);transform:scale(1.05)}
+.fab:active{transform:scale(.95)}
+.fab .icon{width:24px;height:24px}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:500;backdrop-filter:blur(2px)}
+.modal-bg.active{display:flex;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}}
 .modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:24px 20px 32px;animation:slideUp .3s cubic-bezier(.2,.9,.3,1)}
 @keyframes slideUp{from{transform:translateY(100%)}}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.close-btn{background:var(--bg2);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;color:var(--muted)}
+.modal-header h2{display:flex;align-items:center;gap:8px}
+.modal-header h2 .icon{width:20px;height:20px;color:var(--text)}
+.close-btn{background:var(--bg2);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center}
+.close-btn .icon{width:18px;height:18px}
+.close-btn:hover{background:var(--line);color:var(--text)}
+
+/* Link tabs (footer links) */
 .link-tabs{display:flex;justify-content:center;gap:20px;margin-top:24px;font-size:14px}
-.link-tabs a{color:var(--muted);text-decoration:none;cursor:pointer}
-.link-tabs a.active{color:var(--text);font-weight:500}
+.link-tabs a{color:var(--muted);text-decoration:none;cursor:pointer;transition:color .15s}
+.link-tabs a:hover{color:var(--text)}
+
+/* Asignación date */
 .asg-date{width:48px;flex-shrink:0;text-align:center}
 .asg-date-day{font-size:20px;font-weight:600;line-height:1}
 .asg-date-month{font-size:11px;color:var(--muted);text-transform:uppercase;margin-top:2px}
-.banner-pending{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;font-size:13px;color:#92400e;margin-bottom:16px;line-height:1.4}
-.banner-invite{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;font-size:14px;color:#1e40af;margin-bottom:20px;line-height:1.5}
-.banner-info{background:#f4f4f5;border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5}
-.hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+
+/* Banners */
+.banner-pending{background:var(--warn-bg);border:1px solid var(--warn);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--warn-fg);margin-bottom:16px;line-height:1.4;display:flex;gap:10px;align-items:flex-start}
+.banner-pending .icon{width:18px;height:18px;flex-shrink:0;margin-top:1px}
+.banner-invite{background:var(--info-bg);border:1px solid var(--info);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--info-fg);margin-bottom:20px;line-height:1.5}
+.banner-info{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5;display:flex;gap:10px;align-items:flex-start}
+.banner-info .icon{width:18px;height:18px;flex-shrink:0;margin-top:1px;color:var(--muted)}
+.banner-info strong{color:var(--text)}
+.banner-info.alert-warn{background:var(--warn-bg);border-color:var(--warn);color:var(--warn-fg)}
+.banner-info.alert-warn .icon{color:var(--warn-fg)}
+.banner-info.alert-warn strong{color:var(--warn-fg)}
+
+/* Link box */
 .link-box{background:var(--bg2);border-radius:10px;padding:12px;font-family:ui-monospace,monospace;font-size:12px;color:var(--text);word-break:break-all;line-height:1.5;margin:12px 0}
-.copy-btn{background:var(--text);color:var(--accent-fg);padding:10px;border-radius:8px;font-size:13px;font-weight:500;width:100%;margin-top:8px}
+.copy-btn{background:var(--text);color:var(--bg);padding:11px;border-radius:9px;font-size:13px;font-weight:500;width:100%;margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.copy-btn .icon{width:16px;height:16px}
+
 .action-row{display:flex;gap:8px;margin-top:12px}
 .action-row .btn{flex:1;margin:0}
-.check-seen      { color:#1d4ed8; font-size:14px; margin-left:4px; letter-spacing:-2px; }
-.check-delivered { color:#71717a; font-size:14px; margin-left:4px; letter-spacing:-2px; }
-.check-pending   { color:#d4d4d8; font-size:14px; margin-left:4px; }
 
-/* Botones de acción de usuario */
-.user-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
-.user-actions button { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; white-space: nowrap; }
-.user-actions button:hover { background: var(--bg2); }
-.user-actions button.danger { color: #b91c1c; border-color: #fecaca; }
-.user-actions button.danger:hover { background: #fef2f2; }
-.user-actions button.success { color: #047857; border-color: #a7f3d0; }
-.user-actions button.success:hover { background: #ecfdf5; }
+/* Receipt checks */
+.check-seen{color:var(--info);display:inline-flex;align-items:center}
+.check-seen .icon{width:14px;height:14px}
+.check-delivered{color:var(--muted);display:inline-flex;align-items:center}
+.check-delivered .icon{width:14px;height:14px}
+.check-pending{color:var(--line);display:inline-flex;align-items:center}
+.check-pending .icon{width:14px;height:14px}
 
-/* Tarjeta push y ajustes */
-.settings-card { display:flex; flex-direction: column; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
-.settings-card-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: var(--text); }
-.settings-card-desc { font-size: 13px; color: var(--muted); line-height: 1.4; margin-bottom: 14px; }
-.settings-btn { padding:10px 14px; border-radius:8px; font-size:14px; font-weight:500; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; transition:all .15s; width: 100%; text-align: center; }
-.settings-btn:hover { background: var(--bg2); }
-.settings-btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-.settings-btn.primary:hover { background: #2f2f33; }
-.settings-btn.active { border-color: #a7f3d0; background: #ecfdf5; color: #047857; }
-.settings-btn.blocked { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
+/* User actions */
+.user-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.user-actions button{flex:1;min-width:0;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.user-actions button .icon{width:13px;height:13px}
+.user-actions button:hover{background:var(--bg2)}
+.user-actions button.danger{color:var(--danger);border-color:var(--danger-bg)}
+.user-actions button.danger:hover{background:var(--danger-bg)}
+.user-actions button.success{color:var(--success);border-color:var(--success-bg)}
+.user-actions button.success:hover{background:var(--success-bg)}
+
+/* Settings cards */
+.settings-card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.settings-card-title{font-weight:600;font-size:15px;margin-bottom:4px;color:var(--text);display:flex;align-items:center;gap:8px}
+.settings-card-title .icon{width:18px;height:18px}
+.settings-card-desc{font-size:13px;color:var(--muted);line-height:1.4;margin-bottom:14px}
+.settings-btn{padding:11px 14px;border-radius:9px;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;transition:all .15s;width:100%;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.settings-btn .icon{width:16px;height:16px}
+.settings-btn:hover{background:var(--bg2)}
+.settings-btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.settings-btn.primary:hover{background:var(--hover)}
+.settings-btn.active{border-color:var(--success);background:var(--success-bg);color:var(--success-fg)}
+.settings-btn.blocked{border-color:var(--danger);background:var(--danger-bg);color:var(--danger-fg)}
+
+/* Push card status icon */
+.push-status-icon{width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg2);flex-shrink:0}
+.push-status-icon .icon{width:20px;height:20px}
+.push-status-icon.active{background:var(--success-bg);color:var(--success)}
+.push-status-icon.blocked{background:var(--danger-bg);color:var(--danger)}
+.push-status-icon.default{background:var(--bg2);color:var(--muted)}
+.push-status-icon.unsupported{background:var(--bg2);color:var(--muted)}
+
+/* Theme toggle in settings */
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.theme-opt{padding:12px;border-radius:9px;border:1px solid var(--line);background:var(--card);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;color:var(--text);transition:all .15s}
+.theme-opt .icon{width:18px;height:18px}
+.theme-opt:hover{background:var(--bg2)}
+.theme-opt.selected{border-color:var(--accent);background:var(--accent);color:var(--accent-fg)}
+
+/* ============================================================
+   NOTIFICATION CENTER (interno)
+   ============================================================ */
+.notif-panel{position:fixed;top:60px;right:16px;z-index:1500;width:min(360px,calc(100vw - 32px));background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);display:none;flex-direction:column;max-height:70vh;overflow:hidden}
+.notif-panel.open{display:flex;animation:notifIn .2s}
+@keyframes notifIn{from{opacity:0;transform:translateY(-6px) scale(.98)}}
+.notif-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+.notif-header h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.notif-header h3 .icon{width:16px;height:16px}
+.notif-actions{display:flex;gap:4px}
+.notif-actions button{background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:4px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px}
+.notif-actions button .icon{width:14px;height:14px}
+.notif-actions button:hover{background:var(--bg2);color:var(--text)}
+.notif-list{overflow-y:auto;flex:1;padding:8px}
+.notif-item{display:flex;gap:10px;padding:10px;border-radius:9px;border:1px solid transparent;cursor:pointer;transition:background .15s}
+.notif-item:hover{background:var(--bg2)}
+.notif-item.unread{background:var(--bg2);border-color:var(--line)}
+.notif-item .nicon{width:32px;height:32px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.notif-item .nicon .icon{width:16px;height:16px}
+.notif-item.info .nicon{background:var(--info-bg);color:var(--info)}
+.notif-item.success .nicon{background:var(--success-bg);color:var(--success)}
+.notif-item.warning .nicon{background:var(--warn-bg);color:var(--warn)}
+.notif-item.error .nicon{background:var(--danger-bg);color:var(--danger)}
+.notif-item .nbody{flex:1;min-width:0}
+.notif-item .ntitle{font-size:13px;font-weight:600;line-height:1.3}
+.notif-item .ndesc{font-size:12px;color:var(--muted);line-height:1.4;margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.notif-item .ntime{font-size:11px;color:var(--muted);margin-top:4px}
+.notif-item .ndot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;align-self:center;margin-left:4px}
+.notif-empty{padding:32px 16px;text-align:center;color:var(--muted);font-size:13px}
+.notif-empty .icon{width:32px;height:32px;color:var(--line);margin-bottom:8px}
+
+/* Badge count on bell */
+.notif-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--card)}
+
+/* Hidden SVG sprite */
+.svg-sprite{position:absolute;width:0;height:0;overflow:hidden}
 </style>
 </head>
 <body>
 
+<!-- ================= SVG ICON SPRITE ================= -->
+<svg class="svg-sprite" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol>
+    <symbol id="i-hourglass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-bell-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/></symbol>
+    <symbol id="i-bell-ring" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 2C2.8 3.7 2 6 2 8.5"/><path d="M22 8.5c0 2.5-.8 4.8-2 6.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-check-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-calendar-days" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.499z"/></symbol>
+    <symbol id="i-clipboard-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2"/><circle cx="15" cy="16" r="1"/><path d="m17 5 4 4M21 5l-4 4"/></symbol>
+    <symbol id="i-user-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 8 5 5M22 8l-5 5"/></symbol>
+    <symbol id="i-user-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></symbol>
+    <symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+    <symbol id="i-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></symbol>
+    <symbol id="i-ban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol>
+    <symbol id="i-triangle-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></symbol>
+    <symbol id="i-circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="18" x2="18" y1="8" y2="14"/><line x1="21" x2="15" y1="11" y2="11"/></symbol>
+    <symbol id="i-clipboard-paste" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V15"/><path d="M19.46 6.54a2 2 0 0 0-2.83 0L11 12.17V15h2.83l5.63-5.63a2 2 0 0 0 0-2.83Z"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></symbol>
+    <symbol id="i-calendar-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M12 14v4M10 16h4"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></symbol>
+    <symbol id="i-x-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  </defs>
+</svg>
+
+<!-- Loader -->
 <div id="loader"><div class="spinner"></div><p>Cargando…</p></div>
+
+<!-- Toast container -->
 <div id="toast-container"></div>
 
-<!-- BOOTSTRAP -->
+<!-- Notification center panel -->
+<div class="notif-panel" id="notif-panel">
+  <div class="notif-header">
+    <h3><svg class="icon"><use href="#i-bell"/></svg> Notificaciones</h3>
+    <div class="notif-actions">
+      <button id="notif-mark-all" title="Marcar todas como leídas"><svg class="icon"><use href="#i-check-check"/></svg> Marcar todas</button>
+      <button id="notif-clear" title="Borrar todas"><svg class="icon"><use href="#i-trash"/></svg></button>
+    </div>
+  </div>
+  <div class="notif-list" id="notif-list"></div>
+</div>
+
+<!-- ================= BOOTSTRAP ================= -->
 <div class="view" id="view-bootstrap">
   <div style="padding-top:40px">
     <h1>Bienvenido</h1>
     <p class="subtitle">Configura la cuenta del administrador maestro</p>
     <div class="banner-info">
-      🚀 Esta es la <strong>primera cuenta del sistema</strong>. Se creará como <strong>Administrador maestro</strong> y podrá generar accesos para el resto de personas.
+      <svg class="icon"><use href="#i-rocket"/></svg>
+      <div>Esta es la <strong>primera cuenta del sistema</strong>. Se creará como <strong>Administrador maestro</strong> y podrá generar accesos para el resto de personas.</div>
     </div>
     <form id="form-bootstrap">
       <div class="field"><label class="label">Tu nombre completo</label><input type="text" id="bs-name" required placeholder="Ej. Juan Pérez"></div>
       <div class="field"><label class="label">Correo</label><input type="email" id="bs-email" required placeholder="admin@correo.com" autocomplete="email"></div>
       <div class="field"><label class="label">Contraseña</label><input type="password" id="bs-pass" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
-      <button type="submit" class="btn" id="btn-bootstrap">Crear administrador</button>
+      <button type="submit" class="btn" id="btn-bootstrap"><svg class="icon"><use href="#i-check"/></svg> Crear administrador</button>
     </form>
   </div>
 </div>
 
-<!-- LOGIN -->
+<!-- ================= LOGIN ================= -->
 <div class="view" id="view-login">
   <div style="padding-top:60px">
     <h1>Asignaciones</h1>
@@ -156,7 +402,7 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
     <form id="form-login">
       <div class="field"><label class="label">Correo</label><input type="email" id="login-email" required placeholder="tu@correo.com" autocomplete="email"></div>
       <div class="field"><label class="label">Contraseña</label><input type="password" id="login-pass" required placeholder="••••••••" autocomplete="current-password"></div>
-      <button type="submit" class="btn" id="btn-login">Entrar</button>
+      <button type="submit" class="btn" id="btn-login"><svg class="icon"><use href="#i-logout"/></svg> Entrar</button>
     </form>
     <div class="link-tabs">
       <a onclick="showView('view-invite-paste')">¿Tienes un link de acceso?</a>
@@ -164,7 +410,7 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
   </div>
 </div>
 
-<!-- PEGAR TOKEN -->
+<!-- ================= PEGAR TOKEN ================= -->
 <div class="view" id="view-invite-paste">
   <div style="padding-top:40px">
     <h1>Tengo un acceso</h1>
@@ -173,7 +419,7 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
       <div class="field">
         <label class="label">Link o código de acceso</label>
         <textarea id="inv-paste-input" rows="3" required placeholder="https://tuapp.com/?invite=abc123…&#10;o solo el código: abc123"></textarea>
-        <p class="hint">Puedes pegar el link completo o solo el código.</p>
+        <p class="hint"><svg class="icon" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-clipboard-paste"/></svg> Puedes pegar el link completo o solo el código.</p>
       </div>
       <button type="submit" class="btn">Continuar</button>
     </form>
@@ -183,19 +429,19 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
   </div>
 </div>
 
-<!-- INVITE FLOW -->
+<!-- ================= INVITE FLOW ================= -->
 <div class="view" id="view-invite">
   <div style="padding-top:40px">
     <h1>Acceso por invitación</h1>
     <p class="subtitle">Completa tu registro para entrar</p>
-    <div class="banner-invite" id="invite-banner">Cargando invitación…</div>
+    <div class="banner-invite" id="invite-banner"><svg class="icon" style="width:16px;height:16px;vertical-align:-3px"><use href="#i-shield-check"/></svg> Cargando invitación…</div>
     <form id="form-invite">
       <input type="hidden" id="inv-token">
       <div class="field"><label class="label">Nombre completo</label><input type="text" id="inv-name" required disabled></div>
       <div class="field"><label class="label">Correo</label><input type="email" id="inv-email" required disabled></div>
       <div class="field"><label class="label">Rol asignado</label><input type="text" id="inv-role" disabled></div>
       <div class="field"><label class="label">Elige una contraseña</label><input type="password" id="inv-pass" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
-      <button type="submit" class="btn" id="btn-invite">Crear mi cuenta</button>
+      <button type="submit" class="btn" id="btn-invite"><svg class="icon"><use href="#i-user-plus"/></svg> Crear mi cuenta</button>
     </form>
     <div class="link-tabs">
       <a onclick="cancelInvite()">Volver al inicio</a>
@@ -203,45 +449,69 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
   </div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- ================= DASHBOARD ================= -->
 <div class="view" id="view-dashboard">
   <div class="topbar">
     <div>
-      <h1 style="font-size:20px;margin:0" id="user-name">—</h1>
-      <p style="color:var(--muted);font-size:13px" id="user-role">—</p>
+      <h1 id="user-name">—</h1>
+      <p class="muted" id="user-role">—</p>
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="menu-btn" onclick="showView('view-settings');renderPushCard();">⚙️ Ajustes</button>
-      <button class="menu-btn" onclick="logout()">Salir</button>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="notif-bell" title="Notificaciones"><svg class="icon"><use href="#i-bell"/></svg><span class="notif-badge empty" id="notif-badge">0</span></button>
+      <button class="icon-btn" id="theme-toggle-btn" title="Cambiar tema"><svg class="icon" id="theme-toggle-icon"><use href="#i-moon"/></svg></button>
+      <button class="menu-btn" onclick="showView('view-settings');renderPushCard();checkPwaInstallability();"><svg class="icon"><use href="#i-settings"/></svg> Ajustes</button>
+      <button class="menu-btn" onclick="logout()"><svg class="icon"><use href="#i-logout"/></svg> Salir</button>
     </div>
   </div>
-  
+
   <div id="pending-banner" class="banner-pending" style="display:none">
-    ⏳ Tu solicitud de rol <strong id="pending-role-name">—</strong> está pendiente de aprobación del administrador.
+    <svg class="icon"><use href="#i-hourglass"/></svg>
+    <div>Tu solicitud de rol <strong id="pending-role-name">—</strong> está pendiente de aprobación del administrador.</div>
   </div>
 
   <div id="admin-section" style="display:none;margin-bottom:20px">
-    <button class="btn btn-ghost" onclick="showView('view-admin');loadAdminTab('asg');">⚙️ Panel de administrador</button>
+    <button class="btn btn-ghost" onclick="showView('view-admin');loadAdminTab('asg');"><svg class="icon"><use href="#i-shield-check"/></svg> Panel de administrador</button>
   </div>
-  
-  <h2 style="margin-bottom:12px">Mis asignaciones</h2>
+
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    <svg style="width:18px;height:18px;color:var(--muted)"><use href="#i-calendar-days"/></svg>
+    <h2 style="margin:0">Mis asignaciones</h2>
+  </div>
   <div id="asg-list"></div>
 </div>
 
-<!-- CONFIGURACIÓN (SETTINGS) -->
+<!-- ================= CONFIGURACIÓN ================= -->
 <div class="view" id="view-settings">
   <div class="topbar">
     <div>
-      <h1 style="font-size:20px;margin:0">Configuración</h1>
-      <p style="color:var(--muted);font-size:13px">Ajustes de la app y notificaciones</p>
+      <h1>Configuración</h1>
+      <p class="muted">Ajustes de la app y notificaciones</p>
     </div>
-    <button class="menu-btn" onclick="showView('view-dashboard')">Volver</button>
+    <button class="menu-btn" onclick="showView('view-dashboard')"><svg class="icon"><use href="#i-chevron-left"/></svg> Volver</button>
+  </div>
+
+  <!-- Apariencia / tema -->
+  <div class="settings-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:var(--bg2);color:var(--text)">
+        <svg style="width:20px;height:20px"><use href="#i-palette"/></svg>
+      </div>
+      <div>
+        <div class="settings-card-title">Apariencia</div>
+        <div class="settings-card-desc" style="margin-bottom:0">Elige entre modo claro, oscuro o del sistema.</div>
+      </div>
+    </div>
+    <div class="theme-grid" id="theme-grid">
+      <button class="theme-opt" data-theme="light"><svg class="icon"><use href="#i-sun"/></svg> Claro</button>
+      <button class="theme-opt" data-theme="dark"><svg class="icon"><use href="#i-moon"/></svg> Oscuro</button>
+      <button class="theme-opt" data-theme="system"><svg class="icon"><use href="#i-monitor"/></svg> Sistema</button>
+    </div>
   </div>
 
   <!-- Tarjeta Push -->
   <div id="push-card" class="settings-card" style="display:none">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-      <div id="push-icon" style="font-size:20px">🔔</div>
+      <div class="push-status-icon" id="push-icon"><svg class="icon"><use href="#i-bell"/></svg></div>
       <div>
         <div class="settings-card-title" id="push-title">Notificaciones</div>
         <div class="settings-card-desc" id="push-subtitle" style="margin-bottom:0">Verificando…</div>
@@ -252,58 +522,67 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
 
   <!-- Botón Instalar PWA -->
   <div class="settings-card" id="pwa-card" style="display:none">
-    <div class="settings-card-title">📱 Instalar Aplicación</div>
-    <div class="settings-card-desc" id="pwa-desc">Instala la app en tu pantalla de inicio para acceder más rápido y a pantalla completa.</div>
-    <button class="settings-btn primary" id="btn-install-pwa" onclick="installPwa()">Instalar App</button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:var(--accent);color:var(--accent-fg)">
+        <svg style="width:20px;height:20px"><use href="#i-smartphone"/></svg>
+      </div>
+      <div>
+        <div class="settings-card-title">Instalar aplicación</div>
+        <div class="settings-card-desc" id="pwa-desc">Instala la app en tu pantalla de inicio para acceder más rápido y a pantalla completa.</div>
+      </div>
+    </div>
+    <button class="settings-btn primary" id="btn-install-pwa" onclick="installPwa()"><svg class="icon"><use href="#i-download"/></svg> Instalar App</button>
   </div>
 
   <!-- Info de iOS -->
   <div class="banner-info" id="ios-install-hint" style="display:none">
-    <strong>💡 Instrucciones para iPhone:</strong><br>
-    Toca el botón <strong>Compartir</strong> (el cuadro con la flecha hacia arriba en Safari) y selecciona <strong>"Añadir a la pantalla de inicio"</strong>.
+    <svg class="icon"><use href="#i-info"/></svg>
+    <div><strong>Instrucciones para iPhone:</strong><br>Toca el botón <strong>Compartir</strong> (el cuadro con la flecha hacia arriba en Safari) y selecciona <strong>"Añadir a la pantalla de inicio"</strong>.</div>
   </div>
 </div>
 
-<!-- ADMIN -->
+<!-- ================= ADMIN ================= -->
 <div class="view" id="view-admin">
   <div class="topbar">
     <div>
-      <h1 style="font-size:20px;margin:0">Panel admin</h1>
-      <p style="color:var(--muted);font-size:13px">Gestión completa</p>
+      <h1>Panel admin</h1>
+      <p class="muted">Gestión completa</p>
     </div>
-    <button class="menu-btn" onclick="showView('view-dashboard')">Volver</button>
+    <button class="menu-btn" onclick="showView('view-dashboard')"><svg class="icon"><use href="#i-chevron-left"/></svg> Volver</button>
   </div>
   <div class="tabs">
-    <div class="tab active" data-tab="asg" onclick="loadAdminTab('asg')">Asignaciones</div>
-    <div class="tab" data-tab="acc" onclick="loadAdminTab('acc')">Accesos</div>
-    <div class="tab" data-tab="users" onclick="loadAdminTab('users')">Usuarios</div>
-    <div class="tab" data-tab="req" onclick="loadAdminTab('req')">Solicitudes <span id="req-count"></span></div>
+    <div class="tab active" data-tab="asg" onclick="loadAdminTab('asg')"><svg class="icon"><use href="#i-clipboard-list"/></svg> Asignaciones</div>
+    <div class="tab" data-tab="acc" onclick="loadAdminTab('acc')"><svg class="icon"><use href="#i-link"/></svg> Accesos</div>
+    <div class="tab" data-tab="users" onclick="loadAdminTab('users')"><svg class="icon"><use href="#i-users"/></svg> Usuarios</div>
+    <div class="tab" data-tab="req" onclick="loadAdminTab('req')"><svg class="icon"><use href="#i-inbox"/></svg> Solicitudes <span class="count empty" id="req-count"></span></div>
   </div>
 
   <div id="admin-tab-asg"><div id="admin-asg-list"></div></div>
   <div id="admin-tab-acc" style="display:none">
-    <div class="banner-info" style="margin-bottom:16px">
-      🔗 Genera links de acceso para las personas. <strong>Ellas se registran solas</strong> con el rol que les asignes.
+    <div class="banner-info">
+      <svg class="icon"><use href="#i-link"/></svg>
+      <div>Genera links de acceso para las personas. <strong>Ellas se registran solas</strong> con el rol que les asignes.</div>
     </div>
     <div id="admin-acc-list"></div>
   </div>
   <div id="admin-tab-users" style="display:none">
-    <div class="banner-info" style="margin-bottom:16px">
-      👥 Gestión de usuarios: roles, contraseñas, revocar/activar acceso.
+    <div class="banner-info">
+      <svg class="icon"><use href="#i-users"/></svg>
+      <div>Gestión de usuarios: roles, contraseñas, revocar/activar acceso.</div>
     </div>
     <div id="admin-users-list"></div>
   </div>
   <div id="admin-tab-req" style="display:none"><div id="admin-req-list"></div></div>
 
-  <button class="fab" id="admin-fab" onclick="onFabClick()">+</button>
+  <button class="fab" id="admin-fab" onclick="onFabClick()" aria-label="Nueva"><svg class="icon"><use href="#i-plus"/></svg></button>
 </div>
 
-<!-- MODAL ASIGNACIÓN -->
+<!-- ================= MODAL ASIGNACIÓN ================= -->
 <div class="modal-bg" id="modal-asg">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="modal-asg-title">Nueva asignación</h2>
-      <button class="close-btn" onclick="closeModal('modal-asg')">×</button>
+      <h2 id="modal-asg-title"><svg class="icon"><use href="#i-calendar-plus"/></svg> Nueva asignación</h2>
+      <button class="close-btn" onclick="closeModal('modal-asg')"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <form id="form-asg">
       <input type="hidden" id="asg-id">
@@ -323,21 +602,22 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
       </div>
       <div class="field"><label class="label">Sala</label><input type="text" id="asg-room" value="Salón A"></div>
       <div class="field"><label class="label">Notas</label><textarea id="asg-notes" rows="2"></textarea></div>
-      <button type="submit" class="btn" id="btn-save-asg">Guardar</button>
+      <button type="submit" class="btn" id="btn-save-asg"><svg class="icon"><use href="#i-save"/></svg> Guardar</button>
     </form>
   </div>
 </div>
 
-<!-- MODAL ACCESO -->
+<!-- ================= MODAL ACCESO ================= -->
 <div class="modal-bg" id="modal-acc">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="modal-acc-title">Generar acceso</h2>
-      <button class="close-btn" onclick="closeModal('modal-acc')">×</button>
+      <h2 id="modal-acc-title"><svg class="icon"><use href="#i-key"/></svg> Generar acceso</h2>
+      <button class="close-btn" onclick="closeModal('modal-acc')"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <div id="acc-form-wrap">
-      <div class="banner-info" style="margin-bottom:16px">
-        La persona se registrará sola con el rol que elijas. El link caduca en 7 días y se usa solo una vez.
+      <div class="banner-info">
+        <svg class="icon"><use href="#i-info"/></svg>
+        <div>La persona se registrará sola con el rol que elijas. El link caduca en 7 días y se usa solo una vez.</div>
       </div>
       <form id="form-acc-create">
         <div class="field"><label class="label">Nombre completo</label><input type="text" id="acc-create-name" required placeholder="Juan Pérez"></div>
@@ -350,28 +630,29 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
             <option value="admin">Administrador</option>
           </select>
         </div>
-        <button type="submit" class="btn" id="btn-create-acc">Generar link de acceso</button>
+        <button type="submit" class="btn" id="btn-create-acc"><svg class="icon"><use href="#i-link"/></svg> Generar link de acceso</button>
       </form>
     </div>
     <div id="acc-result-wrap" style="display:none">
       <p style="margin-bottom:8px;color:var(--muted);font-size:14px">Comparte este link con la persona:</p>
       <div class="link-box" id="acc-result-link"></div>
-      <button class="copy-btn" onclick="copyAccessLink()">📋 Copiar link</button>
-      <button class="btn btn-wa" style="margin-top:8px" onclick="shareViaWhatsApp()">💬 Enviar por WhatsApp</button>
+      <button class="copy-btn" onclick="copyAccessLink()"><svg class="icon"><use href="#i-copy"/></svg> Copiar link</button>
+      <button class="btn btn-wa" style="margin-top:8px" onclick="shareViaWhatsApp()"><svg class="icon"><use href="#i-message"/></svg> Enviar por WhatsApp</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="closeModal('modal-acc')">Listo</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL RESET PASSWORD -->
+<!-- ================= MODAL RESET PASSWORD ================= -->
 <div class="modal-bg" id="modal-pwd">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="modal-pwd-title">Cambiar contraseña</h2>
-      <button class="close-btn" onclick="closeModal('modal-pwd')">×</button>
+      <h2 id="modal-pwd-title"><svg class="icon"><use href="#i-key"/></svg> Cambiar contraseña</h2>
+      <button class="close-btn" onclick="closeModal('modal-pwd')"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
-    <div class="banner-info" style="margin-bottom:16px" id="pwd-info">
-      Vas a cambiar la contraseña de: <strong id="pwd-target-name">—</strong>
+    <div class="banner-info">
+      <svg class="icon"><use href="#i-info"/></svg>
+      <div>Vas a cambiar la contraseña de: <strong id="pwd-target-name">—</strong></div>
     </div>
     <form id="form-pwd">
       <input type="hidden" id="pwd-person-id">
@@ -380,18 +661,18 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
         <input type="text" id="pwd-new" required minlength="6" placeholder="Mínimo 6 caracteres">
         <p class="hint">Comparte esta contraseña con la persona. Podrá cambiarla luego desde su perfil.</p>
       </div>
-      <button type="submit" class="btn" id="btn-save-pwd">Cambiar contraseña</button>
+      <button type="submit" class="btn" id="btn-save-pwd"><svg class="icon"><use href="#i-save"/></svg> Cambiar contraseña</button>
     </form>
   </div>
 </div>
 
-<!-- Inicializar OneSignal (PON TU APP ID AQUÍ) -->
+<!-- Inicializar OneSignal -->
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
-      appId: "3796cda4-ebcf-4288-8139-96e3a5dcf3bc", // <--- ⚠️ REEMPLAZA ESTO POR TU APP ID
-      safari_web_id: "web.onesignal.auto.TU_SAFARI_ID", // <--- (Opcional) Si OneSignal te lo da
+      appId: "3796cda4-ebcf-4288-8139-96e3a5dcf3bc",
+      safari_web_id: "web.onesignal.auto.TU_SAFARI_ID",
       notifyButton: { enable: false },
       allowLocalhostAsSecureOrigin: true,
     });
@@ -404,7 +685,6 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
 // ============================================================
 const SUPABASE_URL='https://glgostqeocepewpsqsbm.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsZ29zdHFlb2NlcGV3cHNxc2JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUyNjUwODQsImV4cCI6MjExMDg0MTA4NH0.pbBk4KZV3TBnU4WXoXFOWD-P4AsZZeGMG_5oXcbS3Z4';
-// Nota: Ya no usamos VAPID_PUBLIC_KEY aquí.
 
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
   auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
@@ -430,24 +710,136 @@ const showView=id=>{
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $(id).classList.add('active');
   window.scrollTo(0,0);
-  if(id==='view-settings'){
-    renderPushCard();
-    checkPwaInstallability();
-  }
+  closeNotifPanel();
+  if(id==='view-settings'){ renderPushCard(); checkPwaInstallability(); }
 };
 const showLoader=()=>$('loader').classList.remove('hidden');
 const hideLoader=()=>$('loader').classList.add('hidden');
 const openModal=id=>$(id).classList.add('active');
 const closeModal=id=>$(id).classList.remove('active');
 
+// Icon helper
+const icon=(name,cls='')=>`<svg class="icon ${cls}"><use href="#i-${name}"/></svg>`;
+
 function toast(msg,type=''){
   const el=document.createElement('div');
-  el.className='toast '+type; el.textContent=msg;
+  el.className='toast '+type;
+  const iconMap={success:'i-circle-check',error:'i-x-circle',info:'i-info'};
+  el.innerHTML=(iconMap[type]?icon(iconMap[type]):'')+'<span>'+esc(msg)+'</span>';
   $('toast-container').appendChild(el);
   setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);},3500);
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function roleLabel(r){return({admin:'Administrador',anciano:'Anciano',siervo_ministerial:'Siervo ministerial',publicador:'Publicador'})[r]||r;}
+function roleLabel(r){return({admin:'Administrador',anciano:'Anciano',siervo_ministerial:'Siervo ministerial',publicador:'Publicador'})[r]||r||'—';}
+
+// ============================================================
+//  TEMA (claro / oscuro / sistema)
+// ============================================================
+function getStoredTheme(){ return localStorage.getItem('at-theme')||'system'; }
+function applyTheme(mode){
+  const root=document.documentElement;
+  let resolved=mode;
+  if(mode==='system'){
+    resolved=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  }
+  root.setAttribute('data-theme',resolved);
+  // toggle icon on topbar
+  const tIcon=$('theme-toggle-icon');
+  if(tIcon) tIcon.innerHTML=`<use href="#${resolved==='dark'?'i-sun':'i-moon'}"/>`;
+  // meta theme-color
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content',resolved==='dark'?'#09090b':'#18181b');
+  // settings grid highlight
+  document.querySelectorAll('.theme-opt').forEach(b=>{
+    b.classList.toggle('selected', b.dataset.theme===mode);
+  });
+}
+function setTheme(mode){
+  localStorage.setItem('at-theme',mode);
+  applyTheme(mode);
+}
+// init theme ASAP
+applyTheme(getStoredTheme());
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
+  if(getStoredTheme()==='system') applyTheme('system');
+});
+
+// ============================================================
+//  NOTIFICACIONES INTERNAS (centro de notificaciones)
+// ============================================================
+const NOTIF_KEY='at-notifications';
+function loadNotifs(){
+  try{ return JSON.parse(localStorage.getItem(NOTIF_KEY))||[]; }catch(e){ return []; }
+}
+function saveNotifs(list){
+  try{ localStorage.setItem(NOTIF_KEY, JSON.stringify(list.slice(0,50))); }catch(e){}
+}
+function pushNotif({title,description='',type='info',assignmentId=null}){
+  const n={id:'n'+Date.now()+Math.random().toString(36).slice(2),title,description,type,assignmentId,createdAt:Date.now(),read:false};
+  const list=[n,...loadNotifs()].slice(0,50);
+  saveNotifs(list);
+  renderNotifBadge();
+  if(document.getElementById('notif-panel').classList.contains('open')) renderNotifList();
+}
+function markNotifRead(id){ const l=loadNotifs().map(n=>n.id===id?{...n,read:true}:n); saveNotifs(l); renderNotifBadge(); renderNotifList(); }
+function markAllNotifsRead(){ const l=loadNotifs().map(n=>({...n,read:true})); saveNotifs(l); renderNotifBadge(); renderNotifList(); }
+function clearNotifs(){ saveNotifs([]); renderNotifBadge(); renderNotifList(); }
+function unreadCount(){ return loadNotifs().filter(n=>!n.read).length; }
+function timeAgo(ts){
+  const d=Date.now()-ts;
+  if(d<60000) return 'ahora';
+  if(d<3600000) return 'hace '+Math.floor(d/60000)+' min';
+  if(d<86400000) return 'hace '+Math.floor(d/3600000)+' h';
+  return 'hace '+Math.floor(d/86400000)+' d';
+}
+function renderNotifBadge(){
+  const c=unreadCount();
+  const b=$('notif-badge');
+  if(c>0){ b.textContent=c>9?'9+':c; b.classList.remove('empty'); }
+  else{ b.textContent='0'; b.classList.add('empty'); }
+}
+const NOTIF_ICONS={info:'i-info',success:'i-circle-check',warning:'i-triangle-alert',error:'i-x-circle'};
+function renderNotifList(){
+  const list=$('notif-list');
+  const notifs=loadNotifs();
+  if(!notifs.length){
+    list.innerHTML=`<div class="notif-empty"><svg class="icon"><use href="#i-bell"/></svg><div>No tienes notificaciones todavía.</div></div>`;
+    return;
+  }
+  list.innerHTML=notifs.map(n=>`
+    <div class="notif-item ${n.type} ${n.read?'':'unread'}" data-id="${n.id}">
+      <div class="nicon"><svg class="icon"><use href="#${NOTIF_ICONS[n.type]||'i-info'}"/></svg></div>
+      <div class="nbody">
+        <div class="ntitle">${esc(n.title)}</div>
+        ${n.description?`<div class="ndesc">${esc(n.description)}</div>`:''}
+        <div class="ntime">${timeAgo(n.createdAt)}</div>
+      </div>
+      ${n.read?'':'<div class="ndot"></div>'}
+    </div>
+  `).join('');
+  list.querySelectorAll('.notif-item').forEach(el=>{
+    el.onclick=()=>markNotifRead(el.dataset.id);
+  });
+}
+function toggleNotifPanel(){
+  const p=$('notif-panel');
+  if(p.classList.contains('open')){ p.classList.remove('open'); }
+  else{ renderNotifList(); p.classList.add('open'); }
+}
+function closeNotifPanel(){ $('notif-panel').classList.remove('open'); }
+document.addEventListener('click',(e)=>{
+  const p=$('notif-panel'); const b=$('notif-bell');
+  if(p.classList.contains('open') && !p.contains(e.target) && e.target!==b && !b.contains(e.target)){
+    p.classList.remove('open');
+  }
+});
+$('notif-bell').addEventListener('click',(e)=>{ e.stopPropagation(); toggleNotifPanel(); });
+$('notif-mark-all').addEventListener('click',(e)=>{ e.stopPropagation(); markAllNotifsRead(); });
+$('notif-clear').addEventListener('click',(e)=>{ e.stopPropagation(); if(confirm('¿Borrar todas las notificaciones?')) clearNotifs(); });
+$('theme-toggle-btn').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  setTheme(cur==='dark'?'light':'dark');
+});
 
 // ============================================================
 //  PWA - INSTALACIÓN
@@ -457,7 +849,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
   deferredPrompt = e;
   checkPwaInstallability();
 });
-
 window.addEventListener('appinstalled', () => {
   $('pwa-card').style.display = 'none';
   $('ios-install-hint').style.display = 'none';
@@ -471,49 +862,26 @@ function checkPwaInstallability() {
   const pwaBtn = $('btn-install-pwa');
   const pwaDesc = $('pwa-desc');
   const iosHint = $('ios-install-hint');
-  
-  if (isStandalone) {
-    pwaCard.style.display = 'none';
-    iosHint.style.display = 'none';
-    return;
-  }
-
+  if (isStandalone) { pwaCard.style.display = 'none'; iosHint.style.display = 'none'; return; }
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  if (isIOS) {
-    pwaCard.style.display = 'none';
-    iosHint.style.display = 'block';
-    return;
-  }
-
-  pwaCard.style.display = 'flex';
-  iosHint.style.display = 'none';
-
-  if (deferredPrompt) {
-    pwaBtn.textContent = 'Instalar App';
-    pwaDesc.textContent = 'Instala la app en tu pantalla de inicio para acceder más rápido y a pantalla completa.';
-  } else {
-    pwaBtn.textContent = 'Cómo instalar manualmente';
-    pwaDesc.textContent = 'Tu navegador no muestra el botón automático. Puedes instalarla manualmente desde el menú.';
-  }
+  if (isIOS) { pwaCard.style.display = 'none'; iosHint.style.display = 'block'; return; }
+  pwaCard.style.display = 'flex'; iosHint.style.display = 'none';
+  if (deferredPrompt) { pwaBtn.innerHTML=icon('i-download')+' Instalar App'; pwaDesc.textContent='Instala la app en tu pantalla de inicio para acceder más rápido y a pantalla completa.'; }
+  else { pwaBtn.innerHTML=icon('i-info')+' Cómo instalar manualmente'; pwaDesc.textContent='Tu navegador no muestra el botón automático. Puedes instalarla manualmente desde el menú.'; }
 }
 
 async function installPwa() {
   if (deferredPrompt) {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      $('pwa-card').style.display = 'none';
-    }
+    if (outcome === 'accepted') { $('pwa-card').style.display = 'none'; }
     deferredPrompt = null;
   } else {
     const esEdge = navigator.userAgent.includes("Edg");
     const esChrome = navigator.userAgent.includes("Chrome");
     let msg = "Para instalar esta aplicación:\n\n";
-    if (esEdge || esChrome) {
-      msg += "1. Haz clic en los 3 puntos (o el icono de instalar) en la barra superior del navegador.\n2. Busca la opción 'Instalar aplicación' o 'Aplicaciones'.\n3. Confirma la instalación.";
-    } else {
-      msg += "Abre el menú de tu navegador y busca la opción 'Instalar aplicación' o 'Añadir a pantalla de inicio'.";
-    }
+    if (esEdge || esChrome) { msg += "1. Haz clic en los 3 puntos (o el icono de instalar) en la barra superior del navegador.\n2. Busca la opción 'Instalar aplicación' o 'Aplicaciones'.\n3. Confirma la instalación."; }
+    else { msg += "Abre el menú de tu navegador y busca la opción 'Instalar aplicación' o 'Añadir a pantalla de inicio'."; }
     alert(msg);
   }
 }
@@ -521,16 +889,15 @@ async function installPwa() {
 // ============================================================
 //  REGISTRO DEL SERVICE WORKER (PWA / OneSignal)
 // ============================================================
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "3796cda4-ebcf-4288-8139-96e3a5dcf3bc", 
-      notifyButton: { enable: false },
-      allowLocalhostAsSecureOrigin: true,
-      // 👇 Forzamos los nombres de los archivos
-      serviceWorkerParam: { scope: "./" },
-      serviceWorkerPath: "./OneSignalSDKWorker.js" 
-    });
+OneSignalDeferred.push(async function(OneSignal) {
+  await OneSignal.init({
+    appId: "3796cda4-ebcf-4288-8139-96e3a5dcf3bc",
+    notifyButton: { enable: false },
+    allowLocalhostAsSecureOrigin: true,
+    serviceWorkerParam: { scope: "./" },
+    serviceWorkerPath: "./OneSignalSDKWorker.js"
   });
+});
 
 // ============================================================
 //  PUSH (ONE SIGNAL)
@@ -540,26 +907,17 @@ async function subscribeToPush() {
     window.OneSignalDeferred.push(async function(OneSignal) {
       await OneSignal.Notifications.requestPermission();
       await OneSignal.login(me.id);
-      console.log('✅ OneSignal vinculado con Supabase User ID');
       pushSubscribed = true;
     });
-  } catch (e) {
-    console.error('[OneSignal] Error:', e);
-  }
+  } catch (e) { console.error('[OneSignal] Error:', e); }
 }
 
 async function sendImmediatePush(assignmentId) {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) throw new Error('sin sesión');
-  
-  // ⚠️ AQUÍ APUNTAMOS A LA NUEVA FUNCIÓN DE IOS
   const res = await fetch(SUPABASE_URL + '/functions/v1/send-push-ios', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + session.access_token
-    },
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token },
     body: JSON.stringify({ assignment_id: assignmentId })
   });
   const json = await res.json();
@@ -568,12 +926,10 @@ async function sendImmediatePush(assignmentId) {
 }
 
 // ============================================================
-//  TARJETA PUSH (ADAPTADA PARA ONE SIGNAL)
+//  TARJETA PUSH
 // ============================================================
 async function checkPushState() {
   if (!('Notification' in window)) return 'unsupported';
-  
-  // Si el navegador soporta OneSignal, revisamos su estado
   if (window.OneSignal && window.OneSignal.Notifications) {
     const permission = await window.OneSignal.Notifications.permission;
     if (permission === false) return 'blocked';
@@ -581,75 +937,59 @@ async function checkPushState() {
     if (hasPermission === 'default') return 'default';
     return 'active';
   }
-  
-  // Fallback
   if (Notification.permission === 'denied') return 'blocked';
   if (Notification.permission === 'default') return 'default';
   return 'active';
 }
 
 async function renderPushCard() {
-  const card = $('push-card');
-  if (!card) return;
+  const card = $('push-card'); if (!card) return;
   const state = await checkPushState();
-  const icon = $('push-icon'), title = $('push-title'), subtitle = $('push-subtitle'), btn = $('push-btn');
-  card.style.display = 'flex';
-  btn.disabled = false;
-  btn.className = 'settings-btn';
-  btn.style.display = 'block';
-
+  const iconBox = $('push-icon'), title = $('push-title'), subtitle = $('push-subtitle'), btn = $('push-btn');
+  card.style.display = 'flex'; btn.disabled = false; btn.className = 'settings-btn'; btn.style.display = 'inline-flex';
+  iconBox.className='push-status-icon';
   switch (state) {
     case 'unsupported':
-      icon.textContent = '🚫'; title.textContent = 'No compatible';
-      subtitle.textContent = 'Este navegador no soporta notificaciones'; btn.style.display = 'none'; break;
+      iconBox.classList.add('unsupported'); iconBox.innerHTML=icon('ban'); title.textContent='No compatible';
+      subtitle.textContent='Este navegador no soporta notificaciones'; btn.style.display='none'; break;
     case 'blocked':
-      card.classList.add('blocked'); icon.textContent = '🔕'; title.textContent = 'Notificaciones bloqueadas';
-      subtitle.textContent = 'Permítelas en los ajustes del sistema';
-      btn.textContent = 'Cómo activar'; btn.classList.add('blocked'); btn.onclick = showBlockedInstructions; break;
+      iconBox.classList.add('blocked'); iconBox.innerHTML=icon('bell-off'); title.textContent='Notificaciones bloqueadas';
+      subtitle.textContent='Permítelas en los ajustes del sistema';
+      btn.innerHTML=icon('info')+' Cómo activar'; btn.classList.add('blocked'); btn.onclick = showBlockedInstructions; break;
     case 'default':
-      icon.textContent = '🔔'; title.textContent = 'Notificaciones desactivadas';
-      subtitle.textContent = 'Actívalas para recibir recordatorios';
-      btn.textContent = 'Activar notificaciones'; btn.classList.add('primary'); btn.onclick = enablePush; break;
+      iconBox.classList.add('default'); iconBox.innerHTML=icon('bell'); title.textContent='Notificaciones desactivadas';
+      subtitle.textContent='Actívalas para recibir recordatorios';
+      btn.innerHTML=icon('bell-ring')+' Activar notificaciones'; btn.classList.add('primary'); btn.onclick = enablePush; break;
     case 'active':
-      card.classList.add('active'); icon.textContent = '✅'; title.textContent = 'Notificaciones activas';
-      subtitle.textContent = 'Recibirás recordatorios automáticos';
-      btn.textContent = 'Desactivar notificaciones'; btn.classList.add('active'); btn.onclick = disablePush; break;
+      iconBox.classList.add('active'); iconBox.innerHTML=icon('check'); title.textContent='Notificaciones activas';
+      subtitle.textContent='Recibirás recordatorios automáticos';
+      btn.innerHTML=icon('bell-off')+' Desactivar notificaciones'; btn.classList.add('active'); btn.onclick = disablePush; break;
   }
 }
 
 async function enablePush() {
   const btn = $('push-btn'); btn.disabled = true; btn.textContent = 'Activando…';
-  try {
-    await sb.from('people').update({ push_enabled: true }).eq('id', me.id);
-    me.profile.push_enabled = true;
-    await subscribeToPush();
+  try { await sb.from('people').update({ push_enabled: true }).eq('id', me.id); me.profile.push_enabled = true; await subscribeToPush();
     toast('Notificaciones activadas', 'success');
+    pushNotif({title:'Notificaciones activadas',description:'Recibirás recordatorios automáticos de tus asignaciones.',type:'success'});
   } catch (e) { toast('Error: ' + e.message, 'error'); }
-  finally { btn.disabled = false; setTimeout(renderPushCard, 1000); }
+  finally { btn.disabled = false; setTimeout(renderPushCard, 800); }
 }
-
 async function disablePush() {
   if (!confirm('¿Desactivar notificaciones push?')) return;
   const btn = $('push-btn'); btn.disabled = true; btn.textContent = 'Desactivando…';
-  try {
-    await sb.from('people').update({ push_enabled: false }).eq('id', me.id);
-    me.profile.push_enabled = false;
-    if (window.OneSignal) {
-      window.OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.logout();
-      });
-    }
+  try { await sb.from('people').update({ push_enabled: false }).eq('id', me.id); me.profile.push_enabled = false;
+    if (window.OneSignal) { window.OneSignalDeferred.push(async function(OneSignal) { await OneSignal.logout(); }); }
     toast('Notificaciones desactivadas', 'success');
   } catch (e) { toast('Error: ' + e.message, 'error'); }
-  finally { btn.disabled = false; setTimeout(renderPushCard, 1000); }
+  finally { btn.disabled = false; setTimeout(renderPushCard, 800); }
 }
-
 function showBlockedInstructions() {
   alert('Si estás en iPhone:\n\n1. Abre los Ajustes de tu iPhone.\n2. Ve a Notificaciones.\n3. Busca esta app (si la instalaste) o Safari.\n4. Permite las notificaciones.');
 }
 
 // ============================================================
-//  RECIBOS (✓✓)
+//  RECIBOS (visto/entregado)
 // ============================================================
 async function markSeen(assignmentId){
   if (!me) return;
@@ -660,11 +1000,7 @@ function observeCardsForSeen(){
   if (!cards.length) return;
   const obs = new IntersectionObserver((entries)=>{
     entries.forEach((entry)=>{
-      if (entry.isIntersecting) {
-        const id = entry.target.dataset.asgId;
-        if (id) markSeen(id);
-        obs.unobserve(entry.target);
-      }
+      if (entry.isIntersecting) { const id = entry.target.dataset.asgId; if (id) markSeen(id); obs.unobserve(entry.target); }
     });
   }, { threshold: 0.5 });
   cards.forEach(c => obs.observe(c));
@@ -691,7 +1027,7 @@ async function tryInviteFlow(token){
   const inv=data[0];
   $('inv-token').value=token; $('inv-name').value=inv.full_name; $('inv-email').value=inv.email;
   $('inv-role').value=roleLabel(inv.role);
-  $('invite-banner').innerHTML=`Hola <strong>${esc(inv.full_name)}</strong>, has recibido acceso como <strong>${roleLabel(inv.role)}</strong>. Solo elige una contraseña.`;
+  $('invite-banner').innerHTML=`<svg class="icon" style="width:16px;height:16px;vertical-align:-3px"><use href="#i-shield-check"/></svg> Hola <strong>${esc(inv.full_name)}</strong>, has recibido acceso como <strong>${roleLabel(inv.role)}</strong>. Solo elige una contraseña.`;
   showView('view-invite');
   return true;
 }
@@ -709,12 +1045,12 @@ $('form-invite-paste').addEventListener('submit',async e=>{
 
 $('form-invite').addEventListener('submit',async e=>{
   e.preventDefault();
-  const b=$('btn-invite'); b.disabled=true; b.textContent='Creando…';
+  const b=$('btn-invite'); b.disabled=true; b.innerHTML=icon('check')+' Creando…';
   const {data,error}=await sb.auth.signUp({
     email:$('inv-email').value, password:$('inv-pass').value,
     options:{data:{full_name:$('inv-name').value, invite_token:$('inv-token').value}}
   });
-  b.disabled=false; b.textContent='Crear mi cuenta';
+  b.disabled=false; b.innerHTML=icon('user-plus')+' Crear mi cuenta';
   if(error) return toast(error.message,'error');
   if(!data.session){toast('Cuenta creada. Revisa tu correo.','success');clearInviteFromUrl();showView('view-login');return;}
   toast('¡Bienvenido!','success'); clearInviteFromUrl(); await bootUser();
@@ -725,15 +1061,17 @@ $('form-invite').addEventListener('submit',async e=>{
 // ============================================================
 $('form-bootstrap').addEventListener('submit',async e=>{
   e.preventDefault();
-  const b=$('btn-bootstrap'); b.disabled=true; b.textContent='Creando…';
+  const b=$('btn-bootstrap'); b.disabled=true; b.innerHTML=icon('check')+' Creando…';
   const {data,error}=await sb.auth.signUp({
     email:$('bs-email').value.trim(), password:$('bs-pass').value,
     options:{data:{full_name:$('bs-name').value.trim()}}
   });
-  b.disabled=false; b.textContent='Crear administrador';
+  b.disabled=false; b.innerHTML=icon('check')+' Crear administrador';
   if(error) return toast(error.message,'error');
   if(!data.session){toast('Cuenta creada. Revisa tu correo.','success');showView('view-login');return;}
-  toast('¡Bienvenido, administrador!','success'); await bootUser();
+  toast('¡Bienvenido, administrador!','success');
+  pushNotif({title:'Bienvenido, administrador',description:'Has creado la cuenta maestra del sistema.',type:'success'});
+  await bootUser();
 });
 
 // ============================================================
@@ -741,11 +1079,11 @@ $('form-bootstrap').addEventListener('submit',async e=>{
 // ============================================================
 $('form-login').addEventListener('submit',async e=>{
   e.preventDefault();
-  const b=$('btn-login'); b.disabled=true; b.textContent='Entrando…';
+  const b=$('btn-login'); b.disabled=true; b.innerHTML=icon('logout')+' Entrando…';
   const {error}=await sb.auth.signInWithPassword({
     email:$('login-email').value.trim(), password:$('login-pass').value
   });
-  b.disabled=false; b.textContent='Entrar';
+  b.disabled=false; b.innerHTML=icon('logout')+' Entrar';
   if(error) return toast(error.message,'error');
   await bootUser();
 });
@@ -783,6 +1121,7 @@ async function bootUser(){
     showView('view-dashboard');
     if (me.profile.push_enabled !== false) subscribeToPush().catch(()=>{});
     checkPwaInstallability();
+    renderNotifBadge();
   } catch(err){
     console.error('bootUser error:',err);
     hideLoader(); toast('Error: '+(err?.message||err),'error');
@@ -801,14 +1140,14 @@ async function loadDashboard(){
   const banner=$('pending-banner');
   if(me.profile.role_request_status==='pendiente' && me.profile.requested_role){
     $('pending-role-name').textContent=roleLabel(me.profile.requested_role);
-    banner.style.display='block';
+    banner.style.display='flex';
   } else banner.style.display='none';
 
   const {data:asgs,error}=await sb.from('v_upcoming_assignments').select('*').eq('person_id',me.id);
   const list=$('asg-list');
   if(error){list.innerHTML='<p class="empty">'+esc(error.message)+'</p>';return;}
   if(!asgs||!asgs.length){
-    list.innerHTML='<div class="empty"><div class="empty-icon">📅</div><p>No tienes asignaciones próximas</p></div>';
+    list.innerHTML='<div class="empty"><div class="empty-icon"><svg class="icon"><use href="#i-calendar-days"/></svg></div><p>No tienes asignaciones próximas</p></div>';
     return;
   }
   const ids = asgs.map(a => a.id);
@@ -833,10 +1172,12 @@ function renderAsgCard(a){
   else{bc='badge-info';bt='En '+dl+' días';}
 
   const checkHtml = a._seen
-    ? '<span class="check-seen" title="Visto">✓✓</span>'
+    ? '<span class="check-seen" title="Visto">'+icon('check-check')+'</span>'
     : a._delivered
-      ? '<span class="check-delivered" title="Entregado">✓✓</span>'
-      : '<span class="check-pending" title="Pendiente">✓</span>';
+      ? '<span class="check-delivered" title="Entregado">'+icon('check-check')+'</span>'
+      : '<span class="check-pending" title="Pendiente">'+icon('check')+'</span>';
+
+  const typeIcon={vida_ministerio:'i-calendar',fin_semana:'i-calendar-days',asamblea:'i-users',otro:'i-calendar'}[a.meeting_type]||'i-calendar';
 
   return `<div class="card asg-card" data-asg-id="${a.id}">
     <div class="card-row">
@@ -876,7 +1217,7 @@ function loadAdminTab(tab){
 function onFabClick(){
   if(currentAdminTab==='asg') openNewAssignment();
   else if(currentAdminTab==='acc') openAccessModal();
-  else toast('Ve a Asignaciones o Accesos para usar el +');
+  else toast('Ve a Asignaciones o Accesos para usar el +','info');
 }
 
 async function loadAdminAsgs(){
@@ -887,15 +1228,15 @@ async function loadAdminAsgs(){
   (statuses||[]).forEach(s => { statusMap[s.assignment_id] = s; });
 
   const el=$('admin-asg-list');
-  if(!asgs.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Sin asignaciones</p></div>';return;}
+  if(!asgs.length){el.innerHTML='<div class="empty"><div class="empty-icon"><svg class="icon"><use href="#i-clipboard-list"/></svg></div><p>Sin asignaciones</p></div>';return;}
 
   el.innerHTML=asgs.map(a=>{
     const st = statusMap[a.id];
-    let check = '<span class="check-pending" title="Pendiente">✓</span>';
+    let check = '<span class="check-pending" title="Pendiente">'+icon('check')+'</span>';
     let titleAttr = 'Pendiente';
-    if (st?.status === 'visto') { check='<span class="check-seen" title="Visto">✓✓</span>'; titleAttr='Visto'; }
-    else if (st?.status === 'entregado') { check='<span class="check-delivered" title="Entregado">✓✓</span>'; titleAttr='Entregado'; }
-    else if (st?.status === 'enviado') { check='<span class="check-pending" title="Enviado">✓</span>'; titleAttr='Enviado'; }
+    if (st?.status === 'visto') { check='<span class="check-seen" title="Visto">'+icon('check-check')+'</span>'; titleAttr='Visto'; }
+    else if (st?.status === 'entregado') { check='<span class="check-delivered" title="Entregado">'+icon('check-check')+'</span>'; titleAttr='Entregado'; }
+    else if (st?.status === 'enviado') { check='<span class="check-pending" title="Enviado">'+icon('check')+'</span>'; titleAttr='Enviado'; }
     return `<div class="card">
       <div class="card-row">
         <div>
@@ -903,8 +1244,8 @@ async function loadAdminAsgs(){
           <div class="card-meta">${esc(a.full_name)} · ${a.meeting_date}${a.meeting_time?' '+a.meeting_time.slice(0,5):''}</div>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" data-notify="${a.id}" title="Enviar notificación ahora">🔔</button>
-          <button class="btn btn-ghost btn-sm" data-id="${a.id}">Editar</button>
+          <button class="btn btn-ghost btn-sm" data-notify="${a.id}" title="Enviar notificación ahora" style="display:inline-flex;align-items:center;gap:5px">${icon('bell')}</button>
+          <button class="btn btn-ghost btn-sm" data-id="${a.id}" style="display:inline-flex;align-items:center;gap:5px">${icon('pencil')}<span>Editar</span></button>
         </div>
       </div>
     </div>`;
@@ -916,14 +1257,14 @@ async function loadAdminAsgs(){
   el.querySelectorAll('button[data-notify]').forEach(btn=>{
     btn.onclick=async ()=>{
       if (!confirm('¿Enviar notificación push ahora?')) return;
-      btn.disabled = true; btn.textContent = '⏳';
+      btn.disabled = true; btn.innerHTML = icon('hourglass');
       try {
         const r = await sendImmediatePush(btn.dataset.notify);
-        if (r.ok) toast(`Enviado a OneSignal`, 'success');
+        if (r.ok) { toast(`Enviado a OneSignal`, 'success'); pushNotif({title:'Notificación enviada',description:'Se envió un push inmediato.',type:'success',assignmentId:btn.dataset.notify}); }
         else toast('Falló: ' + (r.error || 'sin detalles'), 'error');
         loadAdminAsgs();
       } catch (e) { toast('Error: ' + e.message, 'error'); }
-      finally { btn.disabled = false; btn.textContent = '🔔'; }
+      finally { btn.disabled = false; btn.innerHTML = icon('bell'); }
     };
   });
 }
@@ -933,7 +1274,7 @@ async function loadAdminAccesses(){
   if(error) return toast(error.message,'error');
   const el=$('admin-acc-list');
   if(!data||!data.length){
-    el.innerHTML='<div class="empty"><div class="empty-icon">🔗</div><p>Sin accesos generados</p><p style="font-size:13px;margin-top:8px">Toca el + para crear el primero</p></div>';
+    el.innerHTML='<div class="empty"><div class="empty-icon"><svg class="icon"><use href="#i-link"/></svg></div><p>Sin accesos generados</p><p style="font-size:13px;margin-top:8px">Toca el + para crear el primero</p></div>';
     return;
   }
   el.innerHTML=data.map(inv=>{
@@ -945,7 +1286,7 @@ async function loadAdminAccesses(){
     return `<div class="card">
       <div class="card-row">
         <div>
-          <div class="card-title">${esc(inv.full_name)}</div>
+          <div class="card-title"><svg class="icon" style="color:var(--muted)"><use href="#i-mail"/></svg><span style="margin-left:2px">${esc(inv.full_name)}</span></div>
           <div class="card-meta">${esc(inv.email)} · ${roleLabel(inv.role)}</div>
         </div>
         <span class="badge ${badge}">${status}</span>
@@ -953,15 +1294,15 @@ async function loadAdminAccesses(){
       ${!used&&!expired?`
         <div class="link-box" style="margin-top:12px">${esc(link)}</div>
         <div class="action-row">
-          <button class="btn btn-ghost btn-sm" onclick="copyText('${esc(link)}')">📋 Copiar</button>
-          <button class="btn btn-wa btn-sm" onclick="shareWhatsApp('${esc(link)}','${esc(inv.full_name)}')">💬 WhatsApp</button>
+          <button class="btn btn-ghost btn-sm" onclick="copyText('${esc(link)}')" style="display:inline-flex;align-items:center;gap:5px">${icon('copy')}<span>Copiar</span></button>
+          <button class="btn btn-wa btn-sm" onclick="shareWhatsApp('${esc(link)}','${esc(inv.full_name)}')" style="display:inline-flex;align-items:center;gap:5px">${icon('message')}<span>WhatsApp</span></button>
         </div>
         <div class="action-row">
-          <button class="btn btn-ghost btn-sm" style="color:#b91c1c;border-color:#fecaca" onclick="revokeAccess('${inv.id}')">Revocar acceso</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger-bg);display:inline-flex;align-items:center;gap:5px" onclick="revokeAccess('${inv.id}')">${icon('trash')}<span>Revocar acceso</span></button>
         </div>
       `:`
         <div class="action-row">
-          <button class="btn btn-ghost btn-sm" style="color:#b91c1c;border-color:#fecaca" onclick="revokeAccess('${inv.id}')">Eliminar</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger-bg);display:inline-flex;align-items:center;gap:5px" onclick="revokeAccess('${inv.id}')">${icon('trash')}<span>Eliminar</span></button>
         </div>
       `}
     </div>`;
@@ -974,25 +1315,25 @@ function openAccessModal(){
   $('form-acc-create').reset();
   $('acc-form-wrap').style.display='block';
   $('acc-result-wrap').style.display='none';
-  $('modal-acc-title').textContent='Generar acceso';
+  $('modal-acc-title').innerHTML=icon('key')+' Generar acceso';
   openModal('modal-acc');
 }
 
 $('form-acc-create').addEventListener('submit',async e=>{
   e.preventDefault();
-  const b=$('btn-create-acc'); b.disabled=true; b.textContent='Generando…';
+  const b=$('btn-create-acc'); b.disabled=true; b.innerHTML=icon('link')+' Generando…';
   const name=$('acc-create-name').value.trim();
   const {data:token,error}=await sb.rpc('create_invitation',{
     p_email:$('acc-create-email').value.trim(),
     p_full_name:name, p_role:$('acc-create-role').value
   });
-  b.disabled=false; b.textContent='Generar link de acceso';
+  b.disabled=false; b.innerHTML=icon('link')+' Generar link de acceso';
   if(error) return toast(error.message,'error');
   lastAccessLink=buildAccessLink(token); lastAccessName=name;
   $('acc-result-link').textContent=lastAccessLink;
   $('acc-form-wrap').style.display='none';
   $('acc-result-wrap').style.display='block';
-  $('modal-acc-title').textContent='Acceso generado';
+  $('modal-acc-title').innerHTML=icon('check-circle')+' Acceso generado';
   loadAdminAccesses();
 });
 
@@ -1022,7 +1363,7 @@ async function loadAdminUsers(){
   if(error) return toast(error.message,'error');
   profilesCache=data||[];
   const el=$('admin-users-list');
-  if(!data.length){el.innerHTML='<div class="empty">Sin usuarios</div>';return;}
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon"><svg class="icon"><use href="#i-users"/></svg></div><p>Sin usuarios</p></div>';return;}
 
   el.innerHTML=data.map(p=>{
     const isMe=p.id===me.id;
@@ -1040,7 +1381,7 @@ async function loadAdminUsers(){
       </div>
 
       <div class="action-row" style="margin-top:10px">
-        <select data-uid="${p.id}" ${isMe?'disabled':''} style="flex:2;padding:8px 10px;font-size:13px;border-radius:8px;border:1px solid var(--line);background:var(--card)">
+        <select data-uid="${p.id}" ${isMe?'disabled':''} style="flex:2;padding:8px 10px;font-size:13px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text)">
           <option value="publicador" ${p.role==='publicador'?'selected':''}>Publicador</option>
           <option value="siervo_ministerial" ${p.role==='siervo_ministerial'?'selected':''}>Siervo ministerial</option>
           <option value="anciano" ${p.role==='anciano'?'selected':''}>Anciano</option>
@@ -1051,12 +1392,12 @@ async function loadAdminUsers(){
 
       <div class="user-actions">
         <button data-reset-pwd="${p.id}" data-reset-name="${esc(p.full_name)}" data-reset-email="${esc(p.email||'')}">
-          🔑 Contraseña
+          ${icon('key')} Contraseña
         </button>
         ${inactive
-          ? `<button class="success" data-reactivate="${p.id}">✅ Reactivar</button>`
+          ? `<button class="success" data-reactivate="${p.id}">${icon('user-check')} Reactivar</button>`
           : `<button class="danger" data-revoke="${p.id}" data-revoke-name="${esc(p.full_name)}" ${isMe?'disabled':''}>
-               🚫 Revocar acceso
+               ${icon('user-x')} Revocar acceso
              </button>`
         }
       </div>
@@ -1073,6 +1414,7 @@ async function loadAdminUsers(){
       btn.disabled=false; btn.textContent='Cambiar';
       if(error) return toast(error.message,'error');
       toast('Rol actualizado','success');
+      pushNotif({title:'Rol actualizado',description:'Actualizaste el rol de un usuario.',type:'info'});
       loadAdminUsers();
     };
   });
@@ -1085,7 +1427,7 @@ async function loadAdminUsers(){
       $('pwd-person-id').value=id;
       $('pwd-target-name').textContent=`${name} (${email})`;
       $('pwd-new').value='';
-      $('modal-pwd-title').textContent='Cambiar contraseña';
+      $('modal-pwd-title').innerHTML=icon('key')+' Cambiar contraseña';
       openModal('modal-pwd');
     };
   });
@@ -1095,9 +1437,9 @@ async function loadAdminUsers(){
       const id=btn.dataset.revoke;
       const name=btn.dataset.revokeName;
       if (!confirm(`¿Revocar acceso a ${name}?\n\n• Se desactivará la cuenta\n• Se eliminarán sus notificaciones push\n• No podrá iniciar sesión hasta que lo reactives\n\n¿Continuar?`)) return;
-      btn.disabled=true; btn.textContent='...';
+      btn.disabled=true; btn.innerHTML=icon('hourglass')+' ...';
       const {error}=await sb.rpc('admin_revoke_access',{p_person_id:id});
-      btn.disabled=false; btn.textContent='🚫 Revocar acceso';
+      btn.disabled=false; btn.innerHTML=icon('user-x')+' Revocar acceso';
       if(error) return toast(error.message,'error');
       toast('Acceso revocado','success');
       loadAdminUsers();
@@ -1108,9 +1450,9 @@ async function loadAdminUsers(){
     btn.onclick=async ()=>{
       const id=btn.dataset.reactivate;
       if (!confirm('¿Reactivar el acceso de este usuario?')) return;
-      btn.disabled=true; btn.textContent='...';
+      btn.disabled=true; btn.innerHTML=icon('hourglass')+' ...';
       const {error}=await sb.rpc('admin_reactivate_access',{p_person_id:id});
-      btn.disabled=false; btn.textContent='✅ Reactivar';
+      btn.disabled=false; btn.innerHTML=icon('user-check')+' Reactivar';
       if(error) return toast(error.message,'error');
       toast('Acceso reactivado','success');
       loadAdminUsers();
@@ -1127,21 +1469,16 @@ $('form-pwd').addEventListener('submit',async e=>{
   const newPass=$('pwd-new').value;
   if (!id) return toast('Sin usuario seleccionado','error');
   if (newPass.length < 6) return toast('Mínimo 6 caracteres','error');
-  const b=$('btn-save-pwd'); b.disabled=true; b.textContent='Cambiando…';
+  const b=$('btn-save-pwd'); b.disabled=true; b.innerHTML=icon('save')+' Cambiando…';
   try {
-    const { error } = await sb.rpc('admin_reset_password',{
-      p_person_id: id,
-      p_new_password: newPass
-    });
-    b.disabled=false; b.textContent='Cambiar contraseña';
+    const { error } = await sb.rpc('admin_reset_password',{ p_person_id: id, p_new_password: newPass });
+    b.disabled=false; b.innerHTML=icon('save')+' Cambiar contraseña';
     if (error) return toast(error.message, 'error');
     toast('Contraseña actualizada', 'success');
-    setTimeout(() => {
-      alert(`Contraseña actualizada correctamente.\n\nNueva contraseña: ${newPass}\n\nCompártela con la persona.`);
-    }, 200);
+    setTimeout(() => { alert(`Contraseña actualizada correctamente.\n\nNueva contraseña: ${newPass}\n\nCompártela con la persona.`); }, 200);
     closeModal('modal-pwd');
   } catch(err) {
-    b.disabled=false; b.textContent='Cambiar contraseña';
+    b.disabled=false; b.innerHTML=icon('save')+' Cambiar contraseña';
     toast('Error: ' + err.message, 'error');
   }
 });
@@ -1155,7 +1492,7 @@ async function loadAdminRequests(){
   if(error) return toast(error.message,'error');
   const el=$('admin-req-list');
   if(!data||!data.length){
-    el.innerHTML='<div class="empty"><div class="empty-icon">✓</div><p>Sin solicitudes pendientes</p></div>';
+    el.innerHTML='<div class="empty"><div class="empty-icon"><svg class="icon"><use href="#i-check-circle"/></svg></div><p>Sin solicitudes pendientes</p></div>';
     updateRequestsBadge(); return;
   }
   el.innerHTML=data.map(p=>`
@@ -1168,8 +1505,8 @@ async function loadAdminRequests(){
         </div>
       </div>
       <div class="action-row">
-        <button class="btn btn-ghost btn-sm" style="color:#b91c1c;border-color:#fecaca" onclick="reviewRequest('${p.id}',false)">Rechazar</button>
-        <button class="btn btn-sm" onclick="reviewRequest('${p.id}',true)">Aprobar</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger-bg);display:inline-flex;align-items:center;gap:5px" onclick="reviewRequest('${p.id}',false)">${icon('x-circle')}<span>Rechazar</span></button>
+        <button class="btn btn-sm" style="display:inline-flex;align-items:center;gap:5px;background:var(--success);color:#fff" onclick="reviewRequest('${p.id}',true)">${icon('check-circle')}<span>Aprobar</span></button>
       </div>
     </div>`).join('');
   updateRequestsBadge();
@@ -1179,6 +1516,7 @@ async function reviewRequest(personId,approve){
   const {error}=await sb.rpc('review_role_request',{p_person_id:personId,p_approve:approve});
   if(error) return toast(error.message,'error');
   toast(approve?'Rol aprobado':'Solicitud rechazada','success');
+  pushNotif({title:approve?'Rol aprobado':'Solicitud rechazada',description:approve?'Has aprobado un cambio de rol.':'Has rechazado una solicitud de rol.',type:approve?'success':'info'});
   loadAdminRequests();
 }
 
@@ -1186,12 +1524,12 @@ async function updateRequestsBadge(){
   if(!me||me.profile?.role!=='admin') return;
   const {count}=await sb.from('people').select('*',{count:'exact',head:true}).eq('role_request_status','pendiente');
   const badge=$('req-count');
-  if(count>0){badge.textContent=`(${count})`;badge.style.color='#b91c1c';}
-  else badge.textContent='';
+  if(count>0){badge.textContent=`(${count})`;badge.style.color='var(--danger)';badge.classList.remove('empty');}
+  else {badge.textContent='';badge.classList.add('empty');}
 }
 
 // ============================================================
-//  ASIGNACIONES
+//  ASIGNACIONES (modal)
 // ============================================================
 async function ensurePeopleLoaded(){
   if(profilesCache.length) return;
@@ -1201,7 +1539,7 @@ async function ensurePeopleLoaded(){
 
 async function openNewAssignment(){
   await ensurePeopleLoaded();
-  $('modal-asg-title').textContent='Nueva asignación';
+  $('modal-asg-title').innerHTML=icon('calendar-plus')+' Nueva asignación';
   $('form-asg').reset(); $('asg-id').value=''; $('asg-room').value='Salón A';
   $('asg-person').innerHTML='<option value="">Selecciona…</option>'+
     profilesCache.filter(p=>p.is_active!==false).map(p=>`<option value="${p.id}">${esc(p.full_name)}</option>`).join('');
@@ -1210,7 +1548,7 @@ async function openNewAssignment(){
 
 async function editAsg(a){
   await ensurePeopleLoaded();
-  $('modal-asg-title').textContent='Editar asignación';
+  $('modal-asg-title').innerHTML=icon('pencil')+' Editar asignación';
   $('asg-id').value=a.id; $('asg-title').value=a.title; $('asg-type').value=a.meeting_type;
   $('asg-date').value=a.meeting_date; $('asg-time').value=a.meeting_time||'';
   $('asg-room').value=a.room||'';
@@ -1228,7 +1566,7 @@ $('form-asg').addEventListener('submit',async e=>{
     meeting_time:$('asg-time').value||null, room:$('asg-room').value.trim()||null,
     notes:$('asg-notes').value.trim()||null, created_by:me.id
   };
-  const b=$('btn-save-asg'); b.disabled=true; b.textContent='Guardando…';
+  const b=$('btn-save-asg'); b.disabled=true; b.innerHTML=icon('save')+' Guardando…';
   let error, savedId = id;
   if(id) {
     ({error}=await sb.from('assignments').update(payload).eq('id',id));
@@ -1237,7 +1575,7 @@ $('form-asg').addEventListener('submit',async e=>{
     error = err;
     if (data) savedId = data.id;
   }
-  b.disabled=false; b.textContent='Guardar';
+  b.disabled=false; b.innerHTML=icon('save')+' Guardar';
   if(error) return toast(error.message,'error');
   toast('Guardado','success');
   closeModal('modal-asg');
@@ -1246,14 +1584,14 @@ $('form-asg').addEventListener('submit',async e=>{
   if (savedId) {
     try {
       const result = await sendImmediatePush(savedId);
-      if (result.ok) toast(`Notificación enviada vía OneSignal`, 'success');
+      if (result.ok) { toast(`Notificación enviada vía OneSignal`, 'success'); pushNotif({title:'Notificación enviada',description:'Se envió un push al asignado.',type:'success',assignmentId:savedId}); }
       else toast('Error al enviar: ' + (result.error || 'desconocido'), 'error');
     } catch (e) { toast('Guardado. Error al enviar push: ' + e.message, 'error'); }
   }
 });
 
 // ============================================================
-//  REALTIME
+//  REALTIME (con notificaciones internas)
 // ============================================================
 function teardownRealtime(){
   realtimeChannels.forEach(ch=>{ try{ sb.removeChannel(ch); }catch(e){} });
@@ -1277,8 +1615,10 @@ function initRealtime(){
         loadDashboard();
         if(payload.eventType==='INSERT'){
           toast('Nueva asignación: '+payload.new.title,'success');
+          pushNotif({title:'Nueva asignación',description:payload.new.title,type:'info',assignmentId:payload.new.id});
         } else if(payload.eventType==='UPDATE'){
           toast('Asignación actualizada: '+payload.new.title,'success');
+          pushNotif({title:'Asignación actualizada',description:payload.new.title,type:'info',assignmentId:payload.new.id});
         }
       }).subscribe();
   realtimeChannels.push(chAsg);
@@ -1298,6 +1638,7 @@ function initRealtime(){
         loadDashboard();
         if(prevStatus==='pendiente' && payload.new.role_request_status==='aprobado' && payload.new.role!==prevRole){
           toast(`¡Tu rol ${roleLabel(payload.new.role)} fue aprobado!`,'success');
+          pushNotif({title:'Rol aprobado',description:`Tu rol ${roleLabel(payload.new.role)} fue aprobado.`,type:'success'});
         }
       }).subscribe();
   realtimeChannels.push(chMe);
@@ -1332,6 +1673,11 @@ function initRealtime(){
     realtimeChannels.push(chReceiptsAdmin);
   }
 }
+
+// Settings theme grid handlers
+document.querySelectorAll('.theme-opt').forEach(b=>{
+  b.addEventListener('click',()=>setTheme(b.dataset.theme));
+});
 
 // ============================================================
 //  INIT
