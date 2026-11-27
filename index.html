@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Asignaciones Teocráticas</title>
+<meta name="theme-color" content="#18181b">
+
+<!-- ================= PWA ================= -->
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Asignaciones">
+<link rel="apple-touch-icon" href="icon.png">
+<!-- ======================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#f4f4f5; --bg2:#e9e9eb; --card:#fff;
+  --text:#18181b; --muted:#71717a; --line:#e4e4e7;
+  --accent:#18181b; --accent-fg:#fff;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04);
+  --radius:14px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5; padding-bottom: env(safe-area-inset-bottom);}
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:1000;transition:opacity .35s}
+#loader.hidden{opacity:0;pointer-events:none}
+.spinner{width:32px;height:32px;border:2.5px solid var(--line);border-top-color:var(--text);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader p{color:var(--muted);font-size:13px}
+.view{min-height:100vh;display:none;padding:24px 20px 100px;max-width:480px;margin:0 auto;animation:fadeUp .35s}
+.view.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+h2{font-size:18px;font-weight:600;letter-spacing:-.01em}
+.subtitle{color:var(--muted);font-size:14px;margin-bottom:28px}
+.label{font-size:13px;font-weight:500;color:var(--muted);margin-bottom:6px;display:block}
+.field{margin-bottom:16px}
+input,select,textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-family:inherit;font-size:15px;color:var(--text);transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--text);box-shadow:0 0 0 3px rgba(24,24,27,.06)}
+input:disabled{background:var(--bg2);color:var(--muted)}
+button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
+.btn{width:100%;padding:13px;background:var(--accent);color:var(--accent-fg);border-radius:10px;font-size:15px;font-weight:500}
+.btn:hover{background:#2f2f33}
+.btn:active{transform:scale(.99)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn-ghost:hover{background:var(--bg2)}
+.btn-sm{padding:9px 14px;font-size:14px;width:auto}
+.btn-wa{background:#25d366;color:#fff}
+.btn-wa:hover{background:#1eb257}
+.card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:12px;border:1px solid var(--line)}
+.card-title{font-weight:600;font-size:15px;margin-bottom:6px}
+.card-meta{color:var(--muted);font-size:13px}
+.card-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
+.badge{font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+.badge-warn{background:#fffbeb;color:#b45309}
+.badge-danger{background:#fef2f2;color:#b91c1c}
+.badge-info{background:#eff6ff;color:#1d4ed8}
+.badge-neutral{background:var(--bg2);color:var(--muted)}
+.badge-success{background:#ecfdf5;color:#047857}
+.badge-inactive{background:#f4f4f5;color:#a1a1aa}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.menu-btn{background:transparent;border:1px solid var(--line);padding:6px 12px;border-radius:8px;font-size:13px;color:var(--muted)}
+.menu-btn:hover{background:var(--bg2)}
+.tabs{display:flex;gap:4px;background:var(--bg2);border-radius:10px;padding:4px;margin-bottom:20px;overflow-x:auto}
+.tab{flex:1;min-width:80px;padding:8px;text-align:center;border-radius:7px;font-size:12px;font-weight:500;color:var(--muted);background:transparent;cursor:pointer;white-space:nowrap}
+.tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+#toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:8px;width:calc(100% - 40px);max-width:420px;pointer-events:none}
+.toast{background:var(--text);color:var(--accent-fg);padding:14px 18px;border-radius:12px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.15);animation:toastIn .3s;pointer-events:auto}
+.toast.success{background:#047857}
+.toast.error{background:#b91c1c}
+@keyframes toastIn{from{opacity:0;transform:translateY(-8px)}}
+.fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--text);color:var(--accent-fg);font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:100}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:500}
+.modal-bg.active{display:flex}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:24px 20px 32px;animation:slideUp .3s cubic-bezier(.2,.9,.3,1)}
+@keyframes slideUp{from{transform:translateY(100%)}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.close-btn{background:var(--bg2);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;color:var(--muted)}
+.link-tabs{display:flex;justify-content:center;gap:20px;margin-top:24px;font-size:14px}
+.link-tabs a{color:var(--muted);text-decoration:none;cursor:pointer}
+.link-tabs a.active{color:var(--text);font-weight:500}
+.asg-date{width:48px;flex-shrink:0;text-align:center}
+.asg-date-day{font-size:20px;font-weight:600;line-height:1}
+.asg-date-month{font-size:11px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.banner-pending{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;font-size:13px;color:#92400e;margin-bottom:16px;line-height:1.4}
+.banner-invite{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;font-size:14px;color:#1e40af;margin-bottom:20px;line-height:1.5}
+.banner-info{background:#f4f4f5;border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+.link-box{background:var(--bg2);border-radius:10px;padding:12px;font-family:ui-monospace,monospace;font-size:12px;color:var(--text);word-break:break-all;line-height:1.5;margin:12px 0}
+.copy-btn{background:var(--text);color:var(--accent-fg);padding:10px;border-radius:8px;font-size:13px;font-weight:500;width:100%;margin-top:8px}
+.action-row{display:flex;gap:8px;margin-top:12px}
+.action-row .btn{flex:1;margin:0}
+.check-seen      { color:#1d4ed8; font-size:14px; margin-left:4px; letter-spacing:-2px; }
+.check-delivered { color:#71717a; font-size:14px; margin-left:4px; letter-spacing:-2px; }
+.check-pending   { color:#d4d4d8; font-size:14px; margin-left:4px; }
+
+/* Botones de acción de usuario */
+.user-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.user-actions button {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.user-actions button:hover { background: var(--bg2); }
+.user-actions button.danger { color: #b91c1c; border-color: #fecaca; }
+.user-actions button.danger:hover { background: #fef2f2; }
+.user-actions button.success { color: #047857; border-color: #a7f3d0; }
+.user-actions button.success:hover { background: #ecfdf5; }
+
+/* Tarjeta push y ajustes */
+.settings-card { display:flex; flex-direction: column; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
+.settings-card-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; color: var(--text); }
+.settings-card-desc { font-size: 13px; color: var(--muted); line-height: 1.4; margin-bottom: 14px; }
+.settings-btn { padding:10px 14px; border-radius:8px; font-size:14px; font-weight:500; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; transition:all .15s; width: 100%; text-align: center; }
+.settings-btn:hover { background: var(--bg2); }
+.settings-btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.settings-btn.primary:hover { background: #2f2f33; }
+.settings-btn.active { border-color: #a7f3d0; background: #ecfdf5; color: #047857; }
+.settings-btn.blocked { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="spinner"></div><p>Cargando…</p></div>
+<div id="toast-container"></div>
+
+<!-- BOOTSTRAP -->
+<div class="view" id="view-bootstrap">
+  <div style="padding-top:40px">
+    <h1>Bienvenido</h1>
+    <p class="subtitle">Configura la cuenta del administrador maestro</p>
+    <div class="banner-info">
+      🚀 Esta es la <strong>primera cuenta del sistema</strong>. Se creará como <strong>Administrador maestro</strong> y podrá generar accesos para el resto de personas.
+    </div>
+    <form id="form-bootstrap">
+      <div class="field"><label class="label">Tu nombre completo</label><input type="text" id="bs-name" required placeholder="Ej. Juan Pérez"></div>
+      <div class="field"><label class="label">Correo</label><input type="email" id="bs-email" required placeholder="admin@correo.com" autocomplete="email"></div>
+      <div class="field"><label class="label">Contraseña</label><input type="password" id="bs-pass" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
+      <button type="submit" class="btn" id="btn-bootstrap">Crear administrador</button>
+    </form>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="view" id="view-login">
+  <div style="padding-top:60px">
+    <h1>Asignaciones</h1>
+    <p class="subtitle">Accede a tus asignaciones teocráticas</p>
+    <form id="form-login">
+      <div class="field"><label class="label">Correo</label><input type="email" id="login-email" required placeholder="tu@correo.com" autocomplete="email"></div>
+      <div class="field"><label class="label">Contraseña</label><input type="password" id="login-pass" required placeholder="••••••••" autocomplete="current-password"></div>
+      <button type="submit" class="btn" id="btn-login">Entrar</button>
+    </form>
+    <div class="link-tabs">
+      <a onclick="showView('view-invite-paste')">¿Tienes un link de acceso?</a>
+    </div>
+  </div>
+</div>
+
+<!-- PEGAR TOKEN -->
+<div class="view" id="view-invite-paste">
+  <div style="padding-top:40px">
+    <h1>Tengo un acceso</h1>
+    <p class="subtitle">Pega el link o el código que te envió el administrador</p>
+    <form id="form-invite-paste">
+      <div class="field">
+        <label class="label">Link o código de acceso</label>
+        <textarea id="inv-paste-input" rows="3" required placeholder="https://tuapp.com/?invite=abc123…&#10;o solo el código: abc123"></textarea>
+        <p class="hint">Puedes pegar el link completo o solo el código.</p>
+      </div>
+      <button type="submit" class="btn">Continuar</button>
+    </form>
+    <div class="link-tabs">
+      <a onclick="showView('view-login')">Volver al inicio</a>
+    </div>
+  </div>
+</div>
+
+<!-- INVITE FLOW -->
+<div class="view" id="view-invite">
+  <div style="padding-top:40px">
+    <h1>Acceso por invitación</h1>
+    <p class="subtitle">Completa tu registro para entrar</p>
+    <div class="banner-invite" id="invite-banner">Cargando invitación…</div>
+    <form id="form-invite">
+      <input type="hidden" id="inv-token">
+      <div class="field"><label class="label">Nombre completo</label><input type="text" id="inv-name" required disabled></div>
+      <div class="field"><label class="label">Correo</label><input type="email" id="inv-email" required disabled></div>
+      <div class="field"><label class="label">Rol asignado</label><input type="text" id="inv-role" disabled></div>
+      <div class="field"><label class="label">Elige una contraseña</label><input type="password" id="inv-pass" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
+      <button type="submit" class="btn" id="btn-invite">Crear mi cuenta</button>
+    </form>
+    <div class="link-tabs">
+      <a onclick="cancelInvite()">Volver al inicio</a>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="view" id="view-dashboard">
+  <div class="topbar">
+    <div>
+      <h1 style="font-size:20px;margin:0" id="user-name">—</h1>
+      <p style="color:var(--muted);font-size:13px" id="user-role">—</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="menu-btn" onclick="showView('view-settings');renderPushCard();">⚙️ Ajustes</button>
+      <button class="menu-btn" onclick="logout()">Salir</button>
+    </div>
+  </div>
+  
+  <div id="pending-banner" class="banner-pending" style="display:none">
+    ⏳ Tu solicitud de rol <strong id="pending-role-name">—</strong> está pendiente de aprobación del administrador.
+  </div>
+
+  <div id="admin-section" style="display:none;margin-bottom:20px">
+    <button class="btn btn-ghost" onclick="showView('view-admin');loadAdminTab('asg');">⚙️ Panel de administrador</button>
+  </div>
+  
+  <h2 style="margin-bottom:12px">Mis asignaciones</h2>
+  <div id="asg-list"></div>
+</div>
+
+<!-- CONFIGURACIÓN (SETTINGS) -->
+<div class="view" id="view-settings">
+  <div class="topbar">
+    <div>
+      <h1 style="font-size:20px;margin:0">Configuración</h1>
+      <p style="color:var(--muted);font-size:13px">Ajustes de la app y notificaciones</p>
+    </div>
+    <button class="menu-btn" onclick="showView('view-dashboard')">Volver</button>
+  </div>
+
+  <!-- Tarjeta Push (Ahora va primero) -->
+  <div id="push-card" class="settings-card" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div id="push-icon" style="font-size:20px">🔔</div>
+      <div>
+        <div class="settings-card-title" id="push-title">Notificaciones</div>
+        <div class="settings-card-desc" id="push-subtitle" style="margin-bottom:0">Verificando…</div>
+      </div>
+    </div>
+    <button class="settings-btn" id="push-btn" style="margin-top:12px">…</button>
+  </div>
+
+  <!-- Botón Instalar PWA (Ahora va segundo) -->
+  <div class="settings-card" id="pwa-card" style="display:none">
+    <div class="settings-card-title">📱 Instalar Aplicación</div>
+    <div class="settings-card-desc" id="pwa-desc">Instala la app en tu pantalla de inicio para acceder más rápido y a pantalla completa.</div>
+    <button class="settings-btn primary" id="btn-install-pwa" onclick="installPwa()">Instalar App</button>
+  </div>
+
+  <!-- Info de iOS -->
+  <div class="banner-info" id="ios-install-hint" style="display:none">
+    <strong>💡 Instrucciones para iPhone:</strong><br>
+    Toca el botón <strong>Compartir</strong> (el cuadro con la flecha hacia arriba en Safari) y selecciona <strong>"Añadir a la pantalla de inicio"</strong>.
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="view" id="view-admin">
+  <div class="topbar">
+    <div>
+      <h1 style="font-size:20px;margin:0">Panel admin</h1>
+      <p style="color:var(--muted);font-size:13px">Gestión completa</p>
+    </div>
+    <button class="menu-btn" onclick="showView('view-dashboard')">Volver</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="asg" onclick="loadAdminTab('asg')">Asignaciones</div>
+    <div class="tab" data-tab="acc" onclick="loadAdminTab('acc')">Accesos</div>
+    <div class="tab" data-tab="users" onclick="loadAdminTab('users')">Usuarios</div>
+    <div class="tab" data-tab="req" onclick="loadAdminTab('req')">Solicitudes <span id="req-count"></span></div>
+  </div>
+
+  <div id="admin-tab-asg"><div id="admin-asg-list"></div></div>
+  <div id="admin-tab-acc" style="display:none">
+    <div class="banner-info" style="margin-bottom:16px">
+      🔗 Genera links de acceso para las personas. <strong>Ellas se registran solas</strong> con el rol que les asignes.
+    </div>
+    <div id="admin-acc-list"></div>
+  </div>
+  <div id="admin-tab-users" style="display:none">
+    <div class="banner-info" style="margin-bottom:16px">
+      👥 Gestión de usuarios: roles, contraseñas, revocar/activar acceso.
+    </div>
+    <div id="admin-users-list"></div>
+  </div>
+  <div id="admin-tab-req" style="display:none"><div id="admin-req-list"></div></div>
+
+  <button class="fab" id="admin-fab" onclick="onFabClick()">+</button>
+</div>
+
+<!-- MODAL ASIGNACIÓN -->
+<div class="modal-bg" id="modal-asg">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-asg-title">Nueva asignación</h2>
+      <button class="close-btn" onclick="closeModal('modal-asg')">×</button>
+    </div>
+    <form id="form-asg">
+      <input type="hidden" id="asg-id">
+      <div class="field"><label class="label">Persona</label><select id="asg-person" required></select></div>
+      <div class="field"><label class="label">Título</label><input type="text" id="asg-title" required placeholder="Lectura de la Biblia"></div>
+      <div class="field"><label class="label">Tipo</label>
+        <select id="asg-type">
+          <option value="vida_ministerio">Vida y Ministerio</option>
+          <option value="fin_semana">Fin de semana</option>
+          <option value="asamblea">Asamblea</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:12px">
+        <div class="field" style="flex:1"><label class="label">Fecha</label><input type="date" id="asg-date" required></div>
+        <div class="field" style="flex:1"><label class="label">Hora</label><input type="time" id="asg-time"></div>
+      </div>
+      <div class="field"><label class="label">Sala</label><input type="text" id="asg-room" value="Salón A"></div>
+      <div class="field"><label class="label">Notas</label><textarea id="asg-notes" rows="2"></textarea></div>
+      <button type="submit" class="btn" id="btn-save-asg">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL ACCESO -->
+<div class="modal-bg" id="modal-acc">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-acc-title">Generar acceso</h2>
+      <button class="close-btn" onclick="closeModal('modal-acc')">×</button>
+    </div>
+    <div id="acc-form-wrap">
+      <div class="banner-info" style="margin-bottom:16px">
+        La persona se registrará sola con el rol que elijas. El link caduca en 7 días y se usa solo una vez.
+      </div>
+      <form id="form-acc-create">
+        <div class="field"><label class="label">Nombre completo</label><input type="text" id="acc-create-name" required placeholder="Juan Pérez"></div>
+        <div class="field"><label class="label">Correo</label><input type="email" id="acc-create-email" required placeholder="juan@correo.com"></div>
+        <div class="field"><label class="label">Rol a asignar</label>
+          <select id="acc-create-role">
+            <option value="publicador">Publicador</option>
+            <option value="siervo_ministerial">Siervo ministerial</option>
+            <option value="anciano">Anciano</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <button type="submit" class="btn" id="btn-create-acc">Generar link de acceso</button>
+      </form>
+    </div>
+    <div id="acc-result-wrap" style="display:none">
+      <p style="margin-bottom:8px;color:var(--muted);font-size:14px">Comparte este link con la persona:</p>
+      <div class="link-box" id="acc-result-link"></div>
+      <button class="copy-btn" onclick="copyAccessLink()">📋 Copiar link</button>
+      <button class="btn btn-wa" style="margin-top:8px" onclick="shareViaWhatsApp()">💬 Enviar por WhatsApp</button>
+      <button class="btn btn-ghost" style="margin-top:8px" onclick="closeModal('modal-acc')">Listo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RESET PASSWORD -->
+<div class="modal-bg" id="modal-pwd">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-pwd-title">Cambiar contraseña</h2>
+      <button class="close-btn" onclick="closeModal('modal-pwd')">×</button>
+    </div>
+    <div class="banner-info" style="margin-bottom:16px" id="pwd-info">
+      Vas a cambiar la contraseña de: <strong id="pwd-target-name">—</strong>
+    </div>
+    <form id="form-pwd">
+      <input type="hidden" id="pwd-person-id">
+      <div class="field">
+        <label class="label">Nueva contraseña</label>
+        <input type="text" id="pwd-new" required minlength="6" placeholder="Mínimo 6 caracteres">
+        <p class="hint">Comparte esta contraseña con la persona. Podrá cambiarla luego desde su perfil.</p>
+      </div>
+      <button type="submit" class="btn" id="btn-save-pwd">Cambiar contraseña</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  CONFIG
+// ============================================================
+const SUPABASE_URL='https://glgostqeocepewpsqsbm.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsZ29zdHFlb2NlcGV3cHNxc2JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUyNjUwODQsImV4cCI6MjExMDg0MTA4NH0.pbBk4KZV3TBnU4WXoXFOWD-P4AsZZeGMG_5oXcbS3Z4';
+const VAPID_PUBLIC_KEY = 'BIJjPjwCCemKuo2ZIVRIdJT34iPC30mOgxYt7sFt8Ad_QYtJZF_Dry3635m_paLAhmYogcOaJS4cnkz4eJtYAIQ';
+
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+  auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+});
+window.sb = sb;
+
+// ============================================================
+//  ESTADO
+// ============================================================
+let me=null;
+let profilesCache=[];
+let booting=false;
+let realtimeReady=false;
+let realtimeChannels=[];
+let currentAdminTab='asg';
+let lastAccessLink='';
+let lastAccessName='';
+let pushSubscribed=false;
+let deferredPrompt=null;
+
+const $=id=>document.getElementById(id);
+const showView=id=>{
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='view-settings'){
+    renderPushCard();
+    checkPwaInstallability();
+  }
+};
+const showLoader=()=>$('loader').classList.remove('hidden');
+const hideLoader=()=>$('loader').classList.add('hidden');
+const openModal=id=>$(id).classList.add('active');
+const closeModal=id=>$(id).classList.remove('active');
+
+function toast(msg,type=''){
+  const el=document.createElement('div');
+  el.className='toast '+type; el.textContent=msg;
+  $('toast-container').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);},3500);
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function roleLabel(r){return({admin:'Administrador',anciano:'Anciano',siervo_ministerial:'Siervo ministerial',publicador:'Publicador'})[r]||r;}
+
+// ============================================================
+//  PWA - INSTALACIÓN
+// ============================================================
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  checkPwaInstallability();
+});
+
+window.addEventListener('appinstalled', () => {
+  $('pwa-card').style.display = 'none';
+  $('ios-install-hint').style.display = 'none';
+  deferredPrompt = null;
+  toast('App instalada con éxito', 'success');
+});
+
+function checkPwaInstallability() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const pwaCard = $('pwa-card');
+  const pwaBtn = $('btn-install-pwa');
+  const pwaDesc = $('pwa-desc');
+  const iosHint = $('ios-install-hint');
+  
+  // Si ya está instalada, ocultar la tarjeta
+  if (isStandalone) {
+    pwaCard.style.display = 'none';
+    iosHint.style.display = 'none';
+    return;
+  }
+
+  // Si es iOS, mostrar instrucciones manuales
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) {
+    pwaCard.style.display = 'none';
+    iosHint.style.display = 'block';
+    return;
+  }
+
+  // Si no está instalada y no es iOS, mostrar la tarjeta
+  pwaCard.style.display = 'flex';
+  iosHint.style.display = 'none';
+
+  // Verificar si el navegador tiene listo el prompt nativo
+  if (deferredPrompt) {
+    pwaBtn.textContent = 'Instalar App';
+    pwaDesc.textContent = 'Instala la app en tu pantalla de inicio para acceder más rápido y a pantalla completa.';
+  } else {
+    // Fallback: El navegador no ha disparado el evento, mostrar instrucciones
+    pwaBtn.textContent = 'Cómo instalar manualmente';
+    pwaDesc.textContent = 'Tu navegador no muestra el botón automático. Puedes instalarla manualmente desde el menú.';
+  }
+}
+
+async function installPwa() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      $('pwa-card').style.display = 'none';
+    }
+    deferredPrompt = null;
+  } else {
+    // Instrucciones manuales si no está el prompt
+    const esEdge = navigator.userAgent.includes("Edg");
+    const esChrome = navigator.userAgent.includes("Chrome");
+    let msg = "Para instalar esta aplicación:\n\n";
+    if (esEdge || esChrome) {
+      msg += "1. Haz clic en los 3 puntos (o el icono de instalar) en la barra superior del navegador.\n2. Busca la opción 'Instalar aplicación' o 'Aplicaciones'.\n3. Confirma la instalación.";
+    } else {
+      msg += "Abre el menú de tu navegador y busca la opción 'Instalar aplicación' o 'Añadir a pantalla de inicio'.";
+    }
+    alert(msg);
+  }
+}
+
+// ============================================================
+//  PWA - REGISTRO DEL SERVICE WORKER
+// ============================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(reg => console.log('✅ Service Worker registrado para PWA'))
+      .catch(err => console.error('❌ Error registrando SW:', err));
+  });
+}
+
+// ============================================================
+//  PUSH
+// ============================================================
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function subscribeToPush(){
+  try {
+    if (pushSubscribed) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (Notification.permission === 'denied') return;
+
+    const registration = await navigator.serviceWorker.ready;
+    let permission = Notification.permission;
+    if (permission === 'default') permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+
+    const sub = subscription.toJSON();
+    const { error } = await sb.from('push_subscriptions').upsert({
+      person_id: me.id,
+      endpoint: sub.endpoint,
+      p256dh: sub.keys.p256dh,
+      auth: sub.keys.auth,
+      user_agent: navigator.userAgent
+    }, { onConflict: 'endpoint' });
+
+    if (error) return console.error('[push]', error.message);
+    pushSubscribed = true;
+    console.log('✅ Push suscrito');
+  } catch (e) {
+    console.error('[push] error:', e);
+  }
+}
+
+async function sendImmediatePush(assignmentId) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) throw new Error('sin sesión');
+  const res = await fetch(SUPABASE_URL + '/functions/v1/send-push', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + session.access_token
+    },
+    body: JSON.stringify({ assignment_id: assignmentId })
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+  return json;
+}
+
+// ============================================================
+//  TARJETA PUSH
+// ============================================================
+async function checkPushState() {
+  if (!('Notification' in window) || !('PushManager' in window) || !('serviceWorker' in navigator)) return 'unsupported';
+  if (Notification.permission === 'denied') return 'blocked';
+  if (Notification.permission === 'default') return 'default';
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) return 'no-sw';
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return 'no-sub';
+  if (!me?.id) return 'no-session';
+  const { data } = await sb.from('push_subscriptions').select('id').eq('person_id', me.id).limit(1);
+  if (!data || data.length === 0) return 'no-db';
+  return 'active';
+}
+
+async function renderPushCard() {
+  const card = $('push-card');
+  if (!card) return;
+  const state = await checkPushState();
+  const icon = $('push-icon'), title = $('push-title'), subtitle = $('push-subtitle'), btn = $('push-btn');
+  card.style.display = 'flex';
+  btn.disabled = false;
+  btn.className = 'settings-btn';
+  btn.style.display = 'block';
+
+  switch (state) {
+    case 'unsupported':
+      icon.textContent = '🚫'; title.textContent = 'No compatible';
+      subtitle.textContent = 'Este navegador no soporta notificaciones'; btn.style.display = 'none'; break;
+    case 'blocked':
+      card.classList.add('blocked'); icon.textContent = '🔕'; title.textContent = 'Notificaciones bloqueadas';
+      subtitle.textContent = 'Permítelas en la configuración de tu navegador';
+      btn.textContent = 'Cómo activar'; btn.classList.add('blocked'); btn.onclick = showBlockedInstructions; break;
+    case 'default':
+      icon.textContent = '🔔'; title.textContent = 'Notificaciones desactivadas';
+      subtitle.textContent = 'Actívalas para recibir recordatorios';
+      btn.textContent = 'Activar notificaciones'; btn.classList.add('primary'); btn.onclick = enablePush; break;
+    case 'no-sw': case 'no-sub': case 'no-db':
+      icon.textContent = '🔔'; title.textContent = 'Notificaciones pendientes';
+      subtitle.textContent = 'Toca para activar en este dispositivo';
+      btn.textContent = 'Activar notificaciones'; btn.classList.add('primary'); btn.onclick = enablePush; break;
+    case 'active':
+      card.classList.add('active'); icon.textContent = '✅'; title.textContent = 'Notificaciones activas';
+      subtitle.textContent = 'Recibirás recordatorios automáticos';
+      btn.textContent = 'Desactivar notificaciones'; btn.classList.add('active'); btn.onclick = disablePush; break;
+  }
+}
+
+async function enablePush() {
+  const btn = $('push-btn'); btn.disabled = true; btn.textContent = 'Activando…';
+  try {
+    await sb.from('people').update({ push_enabled: true }).eq('id', me.id);
+    me.profile.push_enabled = true;
+    pushSubscribed = false;
+    await subscribeToPush();
+    const state = await checkPushState();
+    if (state === 'active') toast('Notificaciones activadas', 'success');
+    else if (state === 'blocked') toast('Permiso bloqueado', 'error');
+    else toast('No se pudo suscribir', 'error');
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+  finally { btn.disabled = false; await renderPushCard(); }
+}
+
+async function disablePush() {
+  if (!confirm('¿Desactivar notificaciones push?')) return;
+  const btn = $('push-btn'); btn.disabled = true; btn.textContent = 'Desactivando…';
+  try {
+    await sb.from('people').update({ push_enabled: false }).eq('id', me.id);
+    me.profile.push_enabled = false;
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) { const sub = await reg.pushManager.getSubscription(); if (sub) await sub.unsubscribe(); }
+    await sb.from('push_subscriptions').delete().eq('person_id', me.id);
+    pushSubscribed = false;
+    toast('Notificaciones desactivadas', 'success');
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+  finally { btn.disabled = false; await renderPushCard(); }
+}
+
+function showBlockedInstructions() {
+  const esiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const t = esiOS
+    ? 'iPhone:\n1. Ajustes del teléfono\n2. Notificaciones\n3. Busca la app (si la instalaste) o Safari\n4. Permitir notificaciones'
+    : 'Android/PC:\n1. Candado junto a la URL → Notificaciones → Permitir\n2. Recarga la página\n3. En Brave: brave://settings/privacy → "Use Google services for push messaging"';
+  alert(t);
+}
+
+// ============================================================
+//  RECIBOS (✓✓)
+// ============================================================
+async function markSeen(assignmentId){
+  if (!me) return;
+  try { await sb.rpc('mark_seen', { p_assignment_id: assignmentId }); } catch(e){}
+}
+function observeCardsForSeen(){
+  const cards = document.querySelectorAll('.asg-card[data-asg-id]');
+  if (!cards.length) return;
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach((entry)=>{
+      if (entry.isIntersecting) {
+        const id = entry.target.dataset.asgId;
+        if (id) markSeen(id);
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  cards.forEach(c => obs.observe(c));
+}
+
+// ============================================================
+//  INVITE
+// ============================================================
+function getTokenFromUrl(){ return new URLSearchParams(location.search).get('invite'); }
+function clearInviteFromUrl(){
+  const url=new URL(location.href); url.searchParams.delete('invite');
+  history.replaceState({},'',url.pathname+url.search);
+}
+async function tryInviteFlow(token){
+  if(!token) token=getTokenFromUrl();
+  if(!token) return false;
+  showLoader();
+  const {data,error}=await sb.rpc('validate_invitation',{p_token:token});
+  hideLoader();
+  if(error || !data || !data.length || !data[0].valid){
+    toast('Acceso inválido o expirado','error');
+    clearInviteFromUrl(); showView('view-login'); return true;
+  }
+  const inv=data[0];
+  $('inv-token').value=token; $('inv-name').value=inv.full_name; $('inv-email').value=inv.email;
+  $('inv-role').value=roleLabel(inv.role);
+  $('invite-banner').innerHTML=`Hola <strong>${esc(inv.full_name)}</strong>, has recibido acceso como <strong>${roleLabel(inv.role)}</strong>. Solo elige una contraseña.`;
+  showView('view-invite');
+  return true;
+}
+function cancelInvite(){ clearInviteFromUrl(); showView('view-login'); }
+
+$('form-invite-paste').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const raw=$('inv-paste-input').value.trim();
+  let token=raw;
+  try { if(raw.startsWith('http')){ const u=new URL(raw); token=u.searchParams.get('invite')||raw; } } catch(_){}
+  $('inv-paste-input').value='';
+  const ok=await tryInviteFlow(token);
+  if(!ok) toast('Link inválido','error');
+});
+
+$('form-invite').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const b=$('btn-invite'); b.disabled=true; b.textContent='Creando…';
+  const {data,error}=await sb.auth.signUp({
+    email:$('inv-email').value, password:$('inv-pass').value,
+    options:{data:{full_name:$('inv-name').value, invite_token:$('inv-token').value}}
+  });
+  b.disabled=false; b.textContent='Crear mi cuenta';
+  if(error) return toast(error.message,'error');
+  if(!data.session){toast('Cuenta creada. Revisa tu correo.','success');clearInviteFromUrl();showView('view-login');return;}
+  toast('¡Bienvenido!','success'); clearInviteFromUrl(); await bootUser();
+});
+
+// ============================================================
+//  BOOTSTRAP
+// ============================================================
+$('form-bootstrap').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const b=$('btn-bootstrap'); b.disabled=true; b.textContent='Creando…';
+  const {data,error}=await sb.auth.signUp({
+    email:$('bs-email').value.trim(), password:$('bs-pass').value,
+    options:{data:{full_name:$('bs-name').value.trim()}}
+  });
+  b.disabled=false; b.textContent='Crear administrador';
+  if(error) return toast(error.message,'error');
+  if(!data.session){toast('Cuenta creada. Revisa tu correo.','success');showView('view-login');return;}
+  toast('¡Bienvenido, administrador!','success'); await bootUser();
+});
+
+// ============================================================
+//  AUTH
+// ============================================================
+$('form-login').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const b=$('btn-login'); b.disabled=true; b.textContent='Entrando…';
+  const {error}=await sb.auth.signInWithPassword({
+    email:$('login-email').value.trim(), password:$('login-pass').value
+  });
+  b.disabled=false; b.textContent='Entrar';
+  if(error) return toast(error.message,'error');
+  await bootUser();
+});
+
+async function logout(){
+  try { await sb.auth.signOut(); } catch(e){}
+  me=null; realtimeReady=false; pushSubscribed=false; teardownRealtime();
+  showView('view-login'); $('form-login').reset();
+}
+
+// ============================================================
+//  BOOT
+// ============================================================
+async function bootUser(){
+  if(booting) return;
+  booting=true;
+  try {
+    showLoader();
+    const {data:{user}}=await sb.auth.getUser();
+    if(!user){hideLoader();showView('view-login');return;}
+    if(me && me.id===user.id && me.profile){ hideLoader(); showView('view-dashboard'); return; }
+    me={id:user.id,email:user.email};
+    let {data:profile}=await sb.from('people').select('*').eq('id',user.id).maybeSingle();
+    if(!profile){
+      await sb.from('people').insert({
+        id:user.id, full_name:user.user_metadata.full_name||user.email,
+        email:user.email, phone:user.user_metadata.phone||null
+      });
+      ({data:profile}=await sb.from('people').select('*').eq('id',user.id).single());
+    }
+    me.profile=profile;
+    await loadDashboard();
+    initRealtime();
+    hideLoader();
+    showView('view-dashboard');
+    if (me.profile.push_enabled !== false) subscribeToPush().catch(()=>{});
+    checkPwaInstallability();
+  } catch(err){
+    console.error('bootUser error:',err);
+    hideLoader(); toast('Error: '+(err?.message||err),'error');
+  } finally { booting=false; }
+}
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+async function loadDashboard(){
+  if(!me?.profile) return;
+  $('user-name').textContent=me.profile.full_name;
+  $('user-role').textContent=roleLabel(me.profile.role);
+  $('admin-section').style.display=me.profile.role==='admin'?'block':'none';
+
+  const banner=$('pending-banner');
+  if(me.profile.role_request_status==='pendiente' && me.profile.requested_role){
+    $('pending-role-name').textContent=roleLabel(me.profile.requested_role);
+    banner.style.display='block';
+  } else banner.style.display='none';
+
+  const {data:asgs,error}=await sb.from('v_upcoming_assignments').select('*').eq('person_id',me.id);
+  const list=$('asg-list');
+  if(error){list.innerHTML='<p class="empty">'+esc(error.message)+'</p>';return;}
+  if(!asgs||!asgs.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">📅</div><p>No tienes asignaciones próximas</p></div>';
+    return;
+  }
+  const ids = asgs.map(a => a.id);
+  const {data:receipts} = await sb.from('assignment_receipts').select('*').in('assignment_id', ids);
+  const receiptMap = {};
+  (receipts||[]).forEach(r => { receiptMap[r.assignment_id] = { delivered: !!r.delivered_at, seen: !!r.seen_at }; });
+  const enriched = asgs.map(a => ({ ...a, _delivered: !!receiptMap[a.id]?.delivered, _seen: !!receiptMap[a.id]?.seen }));
+  list.innerHTML = enriched.map(renderAsgCard).join('');
+  observeCardsForSeen();
+}
+
+function renderAsgCard(a){
+  const d=new Date(a.meeting_date+'T00:00:00');
+  const day=d.getDate();
+  const month=d.toLocaleString('es',{month:'short'});
+  const dl=a.days_left;
+  let bc='badge-info', bt='';
+  if(dl<0){bc='badge-neutral';bt='Pasada';}
+  else if(dl===0){bc='badge-danger';bt='HOY';}
+  else if(dl===1){bc='badge-danger';bt='Mañana';}
+  else if(dl<=7){bc='badge-warn';bt='En '+dl+' días';}
+  else{bc='badge-info';bt='En '+dl+' días';}
+
+  const checkHtml = a._seen
+    ? '<span class="check-seen" title="Visto">✓✓</span>'
+    : a._delivered
+      ? '<span class="check-delivered" title="Entregado">✓✓</span>'
+      : '<span class="check-pending" title="Pendiente">✓</span>';
+
+  return `<div class="card asg-card" data-asg-id="${a.id}">
+    <div class="card-row">
+      <div style="display:flex;gap:14px;align-items:center">
+        <div class="asg-date">
+          <div class="asg-date-day">${day}</div>
+          <div class="asg-date-month">${month}</div>
+        </div>
+        <div>
+          <div class="card-title">${esc(a.title)} ${checkHtml}</div>
+          <div class="card-meta">${esc(a.room||'')}${a.meeting_time?' · '+a.meeting_time.slice(0,5):''}</div>
+        </div>
+      </div>
+      <span class="badge ${bc}">${bt}</span>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+//  ADMIN
+// ============================================================
+function loadAdminTab(tab){
+  currentAdminTab=tab;
+  document.querySelectorAll('#view-admin .tab').forEach(el=>{
+    el.classList.toggle('active',el.dataset.tab===tab);
+  });
+  ['asg','acc','users','req'].forEach(t=>{
+    $('admin-tab-'+t).style.display = t===tab?'block':'none';
+  });
+  if(tab==='asg') loadAdminAsgs();
+  else if(tab==='acc') loadAdminAccesses();
+  else if(tab==='users') loadAdminUsers();
+  else if(tab==='req') loadAdminRequests();
+  updateRequestsBadge();
+}
+
+function onFabClick(){
+  if(currentAdminTab==='asg') openNewAssignment();
+  else if(currentAdminTab==='acc') openAccessModal();
+  else toast('Ve a Asignaciones o Accesos para usar el +');
+}
+
+async function loadAdminAsgs(){
+  const {data:asgs,error}=await sb.from('v_upcoming_assignments').select('*').order('meeting_date');
+  if(error) return toast(error.message,'error');
+  const {data:statuses} = await sb.from('v_assignment_status').select('*');
+  const statusMap = {};
+  (statuses||[]).forEach(s => { statusMap[s.assignment_id] = s; });
+
+  const el=$('admin-asg-list');
+  if(!asgs.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Sin asignaciones</p></div>';return;}
+
+  el.innerHTML=asgs.map(a=>{
+    const st = statusMap[a.id];
+    let check = '<span class="check-pending" title="Pendiente">✓</span>';
+    let titleAttr = 'Pendiente';
+    if (st?.status === 'visto') { check='<span class="check-seen" title="Visto">✓✓</span>'; titleAttr='Visto'; }
+    else if (st?.status === 'entregado') { check='<span class="check-delivered" title="Entregado">✓✓</span>'; titleAttr='Entregado'; }
+    else if (st?.status === 'enviado') { check='<span class="check-pending" title="Enviado">✓</span>'; titleAttr='Enviado'; }
+    return `<div class="card">
+      <div class="card-row">
+        <div>
+          <div class="card-title" title="${titleAttr}">${esc(a.title)} ${check}</div>
+          <div class="card-meta">${esc(a.full_name)} · ${a.meeting_date}${a.meeting_time?' '+a.meeting_time.slice(0,5):''}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" data-notify="${a.id}" title="Enviar notificación ahora">🔔</button>
+          <button class="btn btn-ghost btn-sm" data-id="${a.id}">Editar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('button[data-id]').forEach(btn=>{
+    btn.onclick=()=>{ const a=asgs.find(x=>x.id===btn.dataset.id); if(a) editAsg(a); };
+  });
+  el.querySelectorAll('button[data-notify]').forEach(btn=>{
+    btn.onclick=async ()=>{
+      if (!confirm('¿Enviar notificación push ahora?')) return;
+      btn.disabled = true; btn.textContent = '⏳';
+      try {
+        const r = await sendImmediatePush(btn.dataset.notify);
+        if (r.sent > 0) toast(`Enviado a ${r.sent} dispositivo(s)`, 'success');
+        else if (r.total === 0) toast('La persona no tiene notificaciones activas', 'error');
+        else toast('Falló: ' + (r.errores?.[0]?.error || 'sin detalles'), 'error');
+        loadAdminAsgs();
+      } catch (e) { toast('Error: ' + e.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = '🔔'; }
+    };
+  });
+}
+
+async function loadAdminAccesses(){
+  const {data,error}=await sb.from('invitations').select('*').order('created_at',{ascending:false}).limit(50);
+  if(error) return toast(error.message,'error');
+  const el=$('admin-acc-list');
+  if(!data||!data.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">🔗</div><p>Sin accesos generados</p><p style="font-size:13px;margin-top:8px">Toca el + para crear el primero</p></div>';
+    return;
+  }
+  el.innerHTML=data.map(inv=>{
+    const expired=new Date(inv.expires_at)<new Date();
+    const used=!!inv.used_at;
+    const status=used?'Usado':expired?'Expirado':'Activo';
+    const badge=used?'badge-neutral':expired?'badge-danger':'badge-success';
+    const link=buildAccessLink(inv.token);
+    return `<div class="card">
+      <div class="card-row">
+        <div>
+          <div class="card-title">${esc(inv.full_name)}</div>
+          <div class="card-meta">${esc(inv.email)} · ${roleLabel(inv.role)}</div>
+        </div>
+        <span class="badge ${badge}">${status}</span>
+      </div>
+      ${!used&&!expired?`
+        <div class="link-box" style="margin-top:12px">${esc(link)}</div>
+        <div class="action-row">
+          <button class="btn btn-ghost btn-sm" onclick="copyText('${esc(link)}')">📋 Copiar</button>
+          <button class="btn btn-wa btn-sm" onclick="shareWhatsApp('${esc(link)}','${esc(inv.full_name)}')">💬 WhatsApp</button>
+        </div>
+        <div class="action-row">
+          <button class="btn btn-ghost btn-sm" style="color:#b91c1c;border-color:#fecaca" onclick="revokeAccess('${inv.id}')">Revocar acceso</button>
+        </div>
+      `:`
+        <div class="action-row">
+          <button class="btn btn-ghost btn-sm" style="color:#b91c1c;border-color:#fecaca" onclick="revokeAccess('${inv.id}')">Eliminar</button>
+        </div>
+      `}
+    </div>`;
+  }).join('');
+}
+
+function buildAccessLink(token){ return location.origin+location.pathname+'?invite='+token; }
+
+function openAccessModal(){
+  $('form-acc-create').reset();
+  $('acc-form-wrap').style.display='block';
+  $('acc-result-wrap').style.display='none';
+  $('modal-acc-title').textContent='Generar acceso';
+  openModal('modal-acc');
+}
+
+$('form-acc-create').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const b=$('btn-create-acc'); b.disabled=true; b.textContent='Generando…';
+  const name=$('acc-create-name').value.trim();
+  const {data:token,error}=await sb.rpc('create_invitation',{
+    p_email:$('acc-create-email').value.trim(),
+    p_full_name:name, p_role:$('acc-create-role').value
+  });
+  b.disabled=false; b.textContent='Generar link de acceso';
+  if(error) return toast(error.message,'error');
+  lastAccessLink=buildAccessLink(token); lastAccessName=name;
+  $('acc-result-link').textContent=lastAccessLink;
+  $('acc-form-wrap').style.display='none';
+  $('acc-result-wrap').style.display='block';
+  $('modal-acc-title').textContent='Acceso generado';
+  loadAdminAccesses();
+});
+
+function copyAccessLink(){ copyText(lastAccessLink); }
+function copyText(text){
+  navigator.clipboard.writeText(text).then(()=>toast('Copiado','success')).catch(()=>toast('No se pudo copiar','error'));
+}
+function shareWhatsApp(link,name){
+  const text=`Hola ${name}, este es tu acceso a la app de Asignaciones Teocráticas:\n\n${link}\n\nAbre el link y elige tu contraseña para entrar.`;
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+function shareViaWhatsApp(){ shareWhatsApp(lastAccessLink,lastAccessName); }
+
+async function revokeAccess(id){
+  if(!confirm('¿Eliminar esta invitación? El link dejará de funcionar.')) return;
+  const {error}=await sb.rpc('revoke_invitation',{p_id:id});
+  if(error) return toast(error.message,'error');
+  toast('Invitación eliminada','success');
+  loadAdminAccesses();
+}
+
+// ============================================================
+//  GESTIÓN DE USUARIOS
+// ============================================================
+async function loadAdminUsers(){
+  const {data,error}=await sb.from('people').select('*').order('is_active',{ascending:false}).order('full_name');
+  if(error) return toast(error.message,'error');
+  profilesCache=data||[];
+  const el=$('admin-users-list');
+  if(!data.length){el.innerHTML='<div class="empty">Sin usuarios</div>';return;}
+
+  el.innerHTML=data.map(p=>{
+    const isMe=p.id===me.id;
+    const inactive = p.is_active === false;
+    const roleBadge = inactive ? 'badge-inactive' : 'badge-neutral';
+    const roleText = inactive ? roleLabel(p.role) + ' · Inactivo' : roleLabel(p.role);
+
+    return `<div class="card" ${inactive?'style="opacity:.7"':''}>
+      <div class="card-row">
+        <div>
+          <div class="card-title">${esc(p.full_name)} ${isMe?'<span class="badge badge-info" style="margin-left:6px">Tú</span>':''}</div>
+          <div class="card-meta">${esc(p.email||'')}</div>
+        </div>
+        <span class="badge ${roleBadge}">${roleText}</span>
+      </div>
+
+      <div class="action-row" style="margin-top:10px">
+        <select data-uid="${p.id}" ${isMe?'disabled':''} style="flex:2;padding:8px 10px;font-size:13px;border-radius:8px;border:1px solid var(--line);background:var(--card)">
+          <option value="publicador" ${p.role==='publicador'?'selected':''}>Publicador</option>
+          <option value="siervo_ministerial" ${p.role==='siervo_ministerial'?'selected':''}>Siervo ministerial</option>
+          <option value="anciano" ${p.role==='anciano'?'selected':''}>Anciano</option>
+          <option value="admin" ${p.role==='admin'?'selected':''}>Administrador</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" data-change="${p.id}" ${isMe?'disabled':''}>Cambiar</button>
+      </div>
+
+      <div class="user-actions">
+        <button data-reset-pwd="${p.id}" data-reset-name="${esc(p.full_name)}" data-reset-email="${esc(p.email||'')}">
+          🔑 Contraseña
+        </button>
+        ${inactive
+          ? `<button class="success" data-reactivate="${p.id}">✅ Reactivar</button>`
+          : `<button class="danger" data-revoke="${p.id}" data-revoke-name="${esc(p.full_name)}" ${isMe?'disabled':''}>
+               🚫 Revocar acceso
+             </button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('button[data-change]').forEach(btn=>{
+    btn.onclick=async ()=>{
+      const uid=btn.dataset.change;
+      const sel=el.querySelector(`select[data-uid="${uid}"]`);
+      const role=sel.value;
+      btn.disabled=true; btn.textContent='...';
+      const {error}=await sb.rpc('admin_set_role',{p_person_id:uid,p_role:role});
+      btn.disabled=false; btn.textContent='Cambiar';
+      if(error) return toast(error.message,'error');
+      toast('Rol actualizado','success');
+      loadAdminUsers();
+    };
+  });
+
+  el.querySelectorAll('button[data-reset-pwd]').forEach(btn=>{
+    btn.onclick=()=>{
+      const id=btn.dataset.resetPwd;
+      const name=btn.dataset.resetName;
+      const email=btn.dataset.resetEmail;
+      $('pwd-person-id').value=id;
+      $('pwd-target-name').textContent=`${name} (${email})`;
+      $('pwd-new').value='';
+      $('modal-pwd-title').textContent='Cambiar contraseña';
+      openModal('modal-pwd');
+    };
+  });
+
+  el.querySelectorAll('button[data-revoke]').forEach(btn=>{
+    btn.onclick=async ()=>{
+      const id=btn.dataset.revoke;
+      const name=btn.dataset.revokeName;
+      if (!confirm(`¿Revocar acceso a ${name}?\n\n• Se desactivará la cuenta\n• Se eliminarán sus notificaciones push\n• No podrá iniciar sesión hasta que lo reactives\n\n¿Continuar?`)) return;
+      btn.disabled=true; btn.textContent='...';
+      const {error}=await sb.rpc('admin_revoke_access',{p_person_id:id});
+      btn.disabled=false; btn.textContent='🚫 Revocar acceso';
+      if(error) return toast(error.message,'error');
+      toast('Acceso revocado','success');
+      loadAdminUsers();
+    };
+  });
+
+  el.querySelectorAll('button[data-reactivate]').forEach(btn=>{
+    btn.onclick=async ()=>{
+      const id=btn.dataset.reactivate;
+      if (!confirm('¿Reactivar el acceso de este usuario?')) return;
+      btn.disabled=true; btn.textContent='...';
+      const {error}=await sb.rpc('admin_reactivate_access',{p_person_id:id});
+      btn.disabled=false; btn.textContent='✅ Reactivar';
+      if(error) return toast(error.message,'error');
+      toast('Acceso reactivado','success');
+      loadAdminUsers();
+    };
+  });
+}
+
+// ============================================================
+//  FORM RESET PASSWORD
+// ============================================================
+$('form-pwd').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const id=$('pwd-person-id').value;
+  const newPass=$('pwd-new').value;
+  if (!id) return toast('Sin usuario seleccionado','error');
+  if (newPass.length < 6) return toast('Mínimo 6 caracteres','error');
+  const b=$('btn-save-pwd'); b.disabled=true; b.textContent='Cambiando…';
+  try {
+    const { error } = await sb.rpc('admin_reset_password',{
+      p_person_id: id,
+      p_new_password: newPass
+    });
+    b.disabled=false; b.textContent='Cambiar contraseña';
+    if (error) return toast(error.message, 'error');
+    toast('Contraseña actualizada', 'success');
+    setTimeout(() => {
+      alert(`Contraseña actualizada correctamente.\n\nNueva contraseña: ${newPass}\n\nCompártela con la persona.`);
+    }, 200);
+    closeModal('modal-pwd');
+  } catch(err) {
+    b.disabled=false; b.textContent='Cambiar contraseña';
+    toast('Error: ' + err.message, 'error');
+  }
+});
+
+// ============================================================
+//  SOLICITUDES
+// ============================================================
+async function loadAdminRequests(){
+  const {data,error}=await sb.from('people')
+    .select('*').eq('role_request_status','pendiente').order('role_request_at',{ascending:true});
+  if(error) return toast(error.message,'error');
+  const el=$('admin-req-list');
+  if(!data||!data.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">✓</div><p>Sin solicitudes pendientes</p></div>';
+    updateRequestsBadge(); return;
+  }
+  el.innerHTML=data.map(p=>`
+    <div class="card">
+      <div class="card-row">
+        <div>
+          <div class="card-title">${esc(p.full_name)}</div>
+          <div class="card-meta">${esc(p.email||'')}</div>
+          <div class="card-meta" style="margin-top:6px">Solicita: <strong>${roleLabel(p.requested_role)}</strong></div>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-ghost btn-sm" style="color:#b91c1c;border-color:#fecaca" onclick="reviewRequest('${p.id}',false)">Rechazar</button>
+        <button class="btn btn-sm" onclick="reviewRequest('${p.id}',true)">Aprobar</button>
+      </div>
+    </div>`).join('');
+  updateRequestsBadge();
+}
+
+async function reviewRequest(personId,approve){
+  const {error}=await sb.rpc('review_role_request',{p_person_id:personId,p_approve:approve});
+  if(error) return toast(error.message,'error');
+  toast(approve?'Rol aprobado':'Solicitud rechazada','success');
+  loadAdminRequests();
+}
+
+async function updateRequestsBadge(){
+  if(!me||me.profile?.role!=='admin') return;
+  const {count}=await sb.from('people').select('*',{count:'exact',head:true}).eq('role_request_status','pendiente');
+  const badge=$('req-count');
+  if(count>0){badge.textContent=`(${count})`;badge.style.color='#b91c1c';}
+  else badge.textContent='';
+}
+
+// ============================================================
+//  ASIGNACIONES
+// ============================================================
+async function ensurePeopleLoaded(){
+  if(profilesCache.length) return;
+  const {data}=await sb.from('people').select('*').eq('is_active',true).order('full_name');
+  profilesCache=data||[];
+}
+
+async function openNewAssignment(){
+  await ensurePeopleLoaded();
+  $('modal-asg-title').textContent='Nueva asignación';
+  $('form-asg').reset(); $('asg-id').value=''; $('asg-room').value='Salón A';
+  $('asg-person').innerHTML='<option value="">Selecciona…</option>'+
+    profilesCache.filter(p=>p.is_active!==false).map(p=>`<option value="${p.id}">${esc(p.full_name)}</option>`).join('');
+  openModal('modal-asg');
+}
+
+async function editAsg(a){
+  await ensurePeopleLoaded();
+  $('modal-asg-title').textContent='Editar asignación';
+  $('asg-id').value=a.id; $('asg-title').value=a.title; $('asg-type').value=a.meeting_type;
+  $('asg-date').value=a.meeting_date; $('asg-time').value=a.meeting_time||'';
+  $('asg-room').value=a.room||'';
+  $('asg-person').innerHTML='<option value="">Selecciona…</option>'+
+    profilesCache.map(p=>`<option value="${p.id}" ${p.id===a.person_id?'selected':''}>${esc(p.full_name)}</option>`).join('');
+  openModal('modal-asg');
+}
+
+$('form-asg').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const id=$('asg-id').value;
+  const payload={
+    person_id:$('asg-person').value, title:$('asg-title').value.trim(),
+    meeting_type:$('asg-type').value, meeting_date:$('asg-date').value,
+    meeting_time:$('asg-time').value||null, room:$('asg-room').value.trim()||null,
+    notes:$('asg-notes').value.trim()||null, created_by:me.id
+  };
+  const b=$('btn-save-asg'); b.disabled=true; b.textContent='Guardando…';
+  let error, savedId = id;
+  if(id) {
+    ({error}=await sb.from('assignments').update(payload).eq('id',id));
+  } else {
+    const {data, error: err} = await sb.from('assignments').insert(payload).select().single();
+    error = err;
+    if (data) savedId = data.id;
+  }
+  b.disabled=false; b.textContent='Guardar';
+  if(error) return toast(error.message,'error');
+  toast('Guardado','success');
+  closeModal('modal-asg');
+  loadAdminAsgs();
+
+  if (savedId) {
+    try {
+      const result = await sendImmediatePush(savedId);
+      if (result.sent > 0) toast(`Notificación enviada (${result.sent} dispositivo${result.sent>1?'s':''})`, 'success');
+      else if (result.total === 0) toast('La persona no tiene notificaciones activas', 'error');
+      else if (result.errores?.length) toast('No se pudo enviar: ' + result.errores[0].error, 'error');
+    } catch (e) { toast('Guardado. Error al enviar push', 'error'); }
+  }
+});
+
+// ============================================================
+//  REALTIME
+// ============================================================
+function teardownRealtime(){
+  realtimeChannels.forEach(ch=>{ try{ sb.removeChannel(ch); }catch(e){} });
+  realtimeChannels=[];
+}
+
+function initRealtime(){
+  if(realtimeReady) return;
+  realtimeReady=true;
+  try{ sb.getChannels().forEach(ch=>{
+    if(ch.topic.includes('asg-changes')||ch.topic.includes('me-changes')||
+       ch.topic.includes('people-changes')||ch.topic.includes('receipts-changes')||
+       ch.topic.includes('inv-changes')||ch.topic.includes('asg-admin-changes')||
+       ch.topic.includes('receipts-admin-changes'))
+      sb.removeChannel(ch);
+  }); }catch(e){}
+
+  const chAsg=sb.channel('asg-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'assignments',filter:`person_id=eq.${me.id}`},
+      payload=>{
+        loadDashboard();
+        if(payload.eventType==='INSERT'){
+          toast('Nueva asignación: '+payload.new.title,'success');
+          if(Notification.permission==='granted') new Notification('Nueva asignación',{body:payload.new.title});
+        } else if(payload.eventType==='UPDATE'){
+          toast('Asignación actualizada: '+payload.new.title,'success');
+        }
+      }).subscribe();
+  realtimeChannels.push(chAsg);
+
+  const chReceipts=sb.channel('receipts-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'assignment_receipts',filter:`person_id=eq.${me.id}`},
+      ()=>loadDashboard()).subscribe();
+  realtimeChannels.push(chReceipts);
+
+  const chMe=sb.channel('me-changes-'+me.id)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'people',filter:`id=eq.${me.id}`},
+      payload=>{
+        if(!payload.new) return;
+        const prevStatus=me.profile.role_request_status;
+        const prevRole=me.profile.role;
+        me.profile={...me.profile,...payload.new};
+        loadDashboard();
+        if(prevStatus==='pendiente' && payload.new.role_request_status==='aprobado' && payload.new.role!==prevRole){
+          toast(`¡Tu rol ${roleLabel(payload.new.role)} fue aprobado!`,'success');
+        }
+      }).subscribe();
+  realtimeChannels.push(chMe);
+
+  if(me.profile.role==='admin'){
+    const chPeople=sb.channel('people-changes')
+      .on('postgres_changes',{event:'*',schema:'public',table:'people'},()=>{
+        if($('view-admin').classList.contains('active')){
+          updateRequestsBadge();
+          if(currentAdminTab==='req') loadAdminRequests();
+          if(currentAdminTab==='users') loadAdminUsers();
+        }
+      }).subscribe();
+    realtimeChannels.push(chPeople);
+
+    const chInv=sb.channel('inv-changes')
+      .on('postgres_changes',{event:'*',schema:'public',table:'invitations'},()=>{
+        if($('view-admin').classList.contains('active') && currentAdminTab==='acc') loadAdminAccesses();
+      }).subscribe();
+    realtimeChannels.push(chInv);
+
+    const chAsgAdmin=sb.channel('asg-admin-changes')
+      .on('postgres_changes',{event:'*',schema:'public',table:'assignments'},()=>{
+        if($('view-admin').classList.contains('active') && currentAdminTab==='asg') loadAdminAsgs();
+      }).subscribe();
+    realtimeChannels.push(chAsgAdmin);
+
+    const chReceiptsAdmin=sb.channel('receipts-admin-changes')
+      .on('postgres_changes',{event:'*',schema:'public',table:'assignment_receipts'},()=>{
+        if($('view-admin').classList.contains('active') && currentAdminTab==='asg') loadAdminAsgs();
+      }).subscribe();
+    realtimeChannels.push(chReceiptsAdmin);
+  }
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+sb.auth.onAuthStateChange(async (event)=>{
+  if(event==='SIGNED_OUT'){
+    me=null; realtimeReady=false; pushSubscribed=false; teardownRealtime();
+    showView('view-login'); return;
+  }
+  if(event==='SIGNED_IN' && !me) await bootUser();
+});
+
+(async function init(){
+  try{
+    if(getTokenFromUrl()){ await tryInviteFlow(); return; }
+    const {data:{session}}=await sb.auth.getSession();
+    if(session){ await bootUser(); return; }
+    const {data:needsBootstrap}=await sb.rpc('is_bootstrap_needed');
+    if(needsBootstrap===true){ hideLoader(); showView('view-bootstrap'); return; }
+    hideLoader(); showView('view-login');
+  }catch(e){
+    console.error('init error:',e);
+    hideLoader(); showView('view-login');
+  }
+})();
+</script>
+</body>
+</html>
