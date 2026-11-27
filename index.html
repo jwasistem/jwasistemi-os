@@ -666,19 +666,6 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all .15s}
   </div>
 </div>
 
-<!-- Inicializar OneSignal -->
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "3796cda4-ebcf-4288-8139-96e3a5dcf3bc",
-      safari_web_id: "web.onesignal.auto.TU_SAFARI_ID",
-      notifyButton: { enable: false },
-      allowLocalhostAsSecureOrigin: true,
-    });
-  });
-</script>
-
 <script>
 // ============================================================
 //  CONFIG
@@ -887,67 +874,165 @@ async function installPwa() {
 }
 
 // ============================================================
-//  REGISTRO DEL SERVICE WORKER (PWA / OneSignal)
+//  INICIALIZACIÓN ÚNICA DE ONESIGNAL (SDK WEB v16)
 // ============================================================
-OneSignalDeferred.push(async function(OneSignal) {
-  await OneSignal.init({
-    appId: "3796cda4-ebcf-4288-8139-96e3a5dcf3bc",
-    notifyButton: { enable: false },
-    allowLocalhostAsSecureOrigin: true,
-    serviceWorkerParam: { scope: "./" },
-    serviceWorkerPath: "./OneSignalSDKWorker.js"
-  });
+// Esta aplicación está publicada en GitHub Pages bajo /jwasistem-ios/.
+// El path del worker se expresa desde la raíz del dominio y el scope
+// limita el worker a esta aplicación.
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+let resolveOneSignalReady;
+const oneSignalReady = new Promise(resolve => { resolveOneSignalReady = resolve; });
+window.OneSignalInstance = null;
+window.OneSignalInitError = null;
+
+window.OneSignalDeferred.push(async function(OneSignal) {
+  try {
+    await OneSignal.init({
+      appId: "3796cda4-ebcf-4288-8139-96e3a5dcf3bc",
+      notifyButton: { enable: false },
+      allowLocalhostAsSecureOrigin: true,
+      autoResubscribe: true,
+      serviceWorkerPath: "jwasistem-ios/OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: "/jwasistem-ios/" }
+    });
+
+    window.OneSignalInstance = OneSignal;
+    console.info('[OneSignal] SDK inicializado correctamente');
+    resolveOneSignalReady({ instance: OneSignal, error: null });
+  } catch (error) {
+    window.OneSignalInitError = error;
+    console.error('[OneSignal] Error inicializando SDK:', error);
+    resolveOneSignalReady({ instance: null, error });
+  }
 });
 
+async function getOneSignalInstance() {
+  const result = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('OneSignal no terminó de inicializar. Recarga la aplicación.')), 15000);
+    oneSignalReady.then(value => {
+      clearTimeout(timer);
+      resolve(value);
+    });
+  });
+  if (!result.instance) throw (result.error || new Error('No se pudo inicializar OneSignal'));
+  return result.instance;
+}
+
+// Espera al cambio real de la suscripción (no basta con que exista un ID).
+function waitForActivePushSubscription(OneSignal, timeoutMs = 20000) {
+  const subscription = OneSignal.User && OneSignal.User.PushSubscription;
+  if (!subscription) return Promise.resolve(null);
+
+  return new Promise(resolve => {
+    let finished = false;
+    let timer;
+
+    const cleanup = () => {
+      if (timer) clearTimeout(timer);
+      if (typeof subscription.removeEventListener === 'function') {
+        subscription.removeEventListener('change', onChange);
+      }
+    };
+
+    const finishIfActive = event => {
+      const current = event && event.current ? event.current : null;
+      const id = (current && current.id) || subscription.id;
+      const optedIn = current && typeof current.optedIn === 'boolean'
+        ? current.optedIn
+        : subscription.optedIn;
+
+      if (!finished && id && optedIn === true) {
+        finished = true;
+        cleanup();
+        resolve({ id, optedIn: true });
+      }
+    };
+
+    const onChange = event => finishIfActive(event);
+    if (typeof subscription.addEventListener === 'function') {
+      subscription.addEventListener('change', onChange);
+    }
+
+    timer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        cleanup();
+        resolve(null);
+      }
+    }, timeoutMs);
+
+    finishIfActive(null);
+  });
+}
+
 // ============================================================
-//  PUSH (ONE SIGNAL)
+//  PUSH (ONESIGNAL)
 // ============================================================
 async function subscribeToPush() {
-  // Esperar a que el SDK de OneSignal esté listo (usamos la deferred queue)
-  const OneSignal = await new Promise(resolve => {
-    window.OneSignalDeferred.push(async (os) => resolve(os));
-  });
+  // No esperar al SDK antes de llamar requestPermission: en iOS el permiso
+  // debe solicitarse como consecuencia directa del toque del usuario.
+  const OneSignal = window.OneSignalInstance;
+  if (!OneSignal) {
+    toast('OneSignal todavía se está iniciando. Recarga la aplicación e inténtalo otra vez.', 'error');
+    return false;
+  }
 
-  // En iOS, el push web SOLO funciona si la app está instalada como PWA.
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   if (isIOS && !isStandalone) {
-    toast('En iPhone debes instalar la app (Añadir a pantalla de inicio) para recibir notificaciones', 'info');
+    toast('En iPhone instala primero la aplicación: Safari → Compartir → Añadir a pantalla de inicio.', 'info');
     return false;
   }
 
   try {
-    // 1) Pedir permiso al navegador
-    await OneSignal.Notifications.requestPermission();
-    if (OneSignal.Notifications.permission === false) {
-      toast('Permiso de notificaciones denegado. Actívalo en los Ajustes del navegador/Safari.', 'error');
+    if (!OneSignal.Notifications.isPushSupported()) {
+      toast('Este navegador no admite notificaciones push.', 'error');
       return false;
     }
 
-    // 2) Suscribir al push: crea el player en OneSignal con un subscription id.
-    //    En la v16 del SDK se hace con optIn() (PushSubscription).
-    if (OneSignal.User && OneSignal.User.PushSubscription && typeof OneSignal.User.PushSubscription.optIn === 'function') {
-      await OneSignal.User.PushSubscription.optIn();
+    // Solicitar permiso solo si todavía no está concedido. La llamada se
+    // ejecuta dentro del evento de clic del botón Activar.
+    if (OneSignal.Notifications.permission !== true) {
+      await OneSignal.Notifications.requestPermission();
     }
 
-    // 3) Esperar a que exista un subscription id (comprobante de que hay player suscrito)
-    let subId = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
-    if (!subId) {
-      for (let i = 0; i < 6; i++) {
-        await new Promise(r => setTimeout(r, 500));
-        subId = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
-        if (subId) break;
-      }
-    }
-    if (!subId) {
-      toast('No se pudo registrar el dispositivo. Reabre la app (como PWA) e inténtalo de nuevo.', 'error');
+    if (OneSignal.Notifications.permission !== true ||
+        (window.Notification && Notification.permission !== 'granted')) {
+      toast('No se concedió el permiso de notificaciones en el dispositivo.', 'error');
       return false;
     }
 
-    // 4) Asociar el external_id (Supabase user id) con el player
+    // Vincular primero el usuario de Supabase al usuario de OneSignal.
     await OneSignal.login(me.id);
-    console.log('[OneSignal] vinculado. subscription id:', subId);
+
+    const subscription = OneSignal.User && OneSignal.User.PushSubscription;
+    if (!subscription || typeof subscription.optIn !== 'function') {
+      throw new Error('La API PushSubscription de OneSignal no está disponible.');
+    }
+
+    // Escuchar cambios antes de optIn porque el ID/token pueden llegar después.
+    const activeSubscriptionPromise = waitForActivePushSubscription(OneSignal, 20000);
+    await subscription.optIn();
+    const activeSubscription = await activeSubscriptionPromise;
+
+    if (!activeSubscription) {
+      console.error('[OneSignal] Suscripción no confirmada:', {
+        id: subscription.id,
+        optedIn: subscription.optedIn,
+        tokenAvailable: !!subscription.token,
+        permission: OneSignal.Notifications.permission
+      });
+      toast('El permiso está concedido, pero OneSignal no confirmó la suscripción. Revisa la instalación PWA y el Service Worker.', 'error');
+      return false;
+    }
+
     pushSubscribed = true;
+    console.info('[OneSignal] SUSCRIPCIÓN CONFIRMADA', {
+      externalId: OneSignal.User.externalId,
+      subscriptionId: activeSubscription.id,
+      optedIn: activeSubscription.optedIn,
+      tokenAvailable: !!subscription.token
+    });
     return true;
   } catch (e) {
     console.error('[OneSignal] subscribe error:', e);
@@ -975,16 +1060,30 @@ async function sendImmediatePush(assignmentId) {
 // ============================================================
 async function checkPushState() {
   if (!('Notification' in window)) return 'unsupported';
-  if (window.OneSignal && window.OneSignal.Notifications) {
-    const permission = await window.OneSignal.Notifications.permission;
-    if (permission === false) return 'blocked';
-    const hasPermission = await window.OneSignal.Notifications.getPermissionStatus();
-    if (hasPermission === 'default') return 'default';
-    return 'active';
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isIOS && !isStandalone) return 'install_required';
+
+  let OneSignal;
+  try { OneSignal = await getOneSignalInstance(); }
+  catch (error) {
+    console.error('[OneSignal] No disponible al comprobar estado:', error);
+    return 'unsupported';
   }
-  if (Notification.permission === 'denied') return 'blocked';
-  if (Notification.permission === 'default') return 'default';
-  return 'active';
+
+  if (!OneSignal.Notifications.isPushSupported()) return 'unsupported';
+
+  const nativePermission = Notification.permission;
+  if (nativePermission === 'denied') return 'blocked';
+  if (OneSignal.Notifications.permission !== true || nativePermission !== 'granted') return 'default';
+
+  const subscription = OneSignal.User && OneSignal.User.PushSubscription;
+  if (me && me.profile && me.profile.push_enabled === true &&
+      subscription && subscription.id && subscription.optedIn === true) return 'active';
+
+  // El permiso o incluso el optIn local no sustituyen la preferencia confirmada en Supabase.
+  return 'default';
 }
 
 async function renderPushCard() {
@@ -996,14 +1095,18 @@ async function renderPushCard() {
   switch (state) {
     case 'unsupported':
       iconBox.classList.add('unsupported'); iconBox.innerHTML=icon('ban'); title.textContent='No compatible';
-      subtitle.textContent='Este navegador no soporta notificaciones'; btn.style.display='none'; break;
+      subtitle.textContent='No se pudo iniciar OneSignal o este navegador no admite notificaciones'; btn.style.display='none'; break;
+    case 'install_required':
+      iconBox.classList.add('default'); iconBox.innerHTML=icon('smartphone'); title.textContent='Instala la aplicación';
+      subtitle.textContent='En iPhone, añade esta página a la pantalla de inicio y ábrela desde su icono para activar Push.';
+      btn.innerHTML=icon('info')+' Cómo instalar'; btn.classList.add('primary'); btn.onclick = () => alert('En tu iPhone:\n\n1. Abre esta página en Safari.\n2. Pulsa Compartir.\n3. Selecciona “Añadir a pantalla de inicio”.\n4. Abre la aplicación desde el nuevo icono.\n5. Vuelve aquí y activa las notificaciones.'); break;
     case 'blocked':
       iconBox.classList.add('blocked'); iconBox.innerHTML=icon('bell-off'); title.textContent='Notificaciones bloqueadas';
       subtitle.textContent='Permítelas en los ajustes del sistema';
       btn.innerHTML=icon('info')+' Cómo activar'; btn.classList.add('blocked'); btn.onclick = showBlockedInstructions; break;
     case 'default':
       iconBox.classList.add('default'); iconBox.innerHTML=icon('bell'); title.textContent='Notificaciones desactivadas';
-      subtitle.textContent='Actívalas para recibir recordatorios';
+      subtitle.textContent=Notification.permission==='granted'?'El permiso está concedido, pero falta completar la suscripción.':'Actívalas para recibir recordatorios';
       btn.innerHTML=icon('bell-ring')+' Activar notificaciones'; btn.classList.add('primary'); btn.onclick = enablePush; break;
     case 'active':
       iconBox.classList.add('active'); iconBox.innerHTML=icon('check'); title.textContent='Notificaciones activas';
@@ -1017,10 +1120,11 @@ async function enablePush() {
   try {
     const ok = await subscribeToPush();
     if (ok) {
-      // Solo marcamos push_enabled cuando confirmamos que hay un player suscrito
-      await sb.from('people').update({ push_enabled: true }).eq('id', me.id);
+      // Solo activar el indicador de Supabase después de confirmar id + optedIn.
+      const { error } = await sb.from('people').update({ push_enabled: true }).eq('id', me.id);
+      if (error) throw error;
       me.profile.push_enabled = true;
-      toast('Notificaciones activadas', 'success');
+      toast('Notificaciones activadas y suscripción confirmada', 'success');
       pushNotif({title:'Notificaciones activadas',description:'Recibirás recordatorios automáticos de tus asignaciones.',type:'success'});
     } else {
       // No se suscribió (iOS sin PWA, permiso denegado, etc.)
@@ -1032,8 +1136,17 @@ async function enablePush() {
 async function disablePush() {
   if (!confirm('¿Desactivar notificaciones push?')) return;
   const btn = $('push-btn'); btn.disabled = true; btn.textContent = 'Desactivando…';
-  try { await sb.from('people').update({ push_enabled: false }).eq('id', me.id); me.profile.push_enabled = false;
-    if (window.OneSignal) { window.OneSignalDeferred.push(async function(OneSignal) { await OneSignal.logout(); }); }
+  try {
+    // Actualizar primero Supabase para impedir nuevos envíos mientras se opta fuera.
+    const { error } = await sb.from('people').update({ push_enabled: false }).eq('id', me.id);
+    if (error) throw error;
+    me.profile.push_enabled = false;
+
+    const OneSignal = window.OneSignalInstance;
+    if (OneSignal && OneSignal.User && OneSignal.User.PushSubscription) {
+      await OneSignal.User.PushSubscription.optOut();
+    }
+    pushSubscribed = false;
     toast('Notificaciones desactivadas', 'success');
   } catch (e) { toast('Error: ' + e.message, 'error'); }
   finally { btn.disabled = false; setTimeout(renderPushCard, 800); }
@@ -1143,6 +1256,10 @@ $('form-login').addEventListener('submit',async e=>{
 });
 
 async function logout(){
+  try {
+    const OneSignal = window.OneSignalInstance;
+    if (OneSignal && OneSignal.User && OneSignal.User.externalId) await OneSignal.logout();
+  } catch(e) { console.error('[OneSignal] logout:', e); }
   try { await sb.auth.signOut(); } catch(e){}
   me=null; realtimeReady=false; pushSubscribed=false; teardownRealtime();
   showView('view-login'); $('form-login').reset();
@@ -1173,14 +1290,23 @@ async function bootUser(){
     initRealtime();
     hideLoader();
     showView('view-dashboard');
-    // Si el usuario ya tenía push habilitado, re-vinculamos el external_id
-    // (no pedimos permiso de nuevo: el SDK ya lo gestiona con el SW instalado).
-    if (me.profile.push_enabled !== false) {
-      window.OneSignalDeferred.push(async function(OneSignal) {
-        try { await OneSignal.login(me.id); pushSubscribed = true; }
-        catch(e){ console.error('[OneSignal] login on boot:', e); }
-      });
-    }
+    // Vincular siempre el usuario actualmente autenticado. Esto evita dejar
+    // el navegador asociado al External ID de una cuenta anterior. Login NO
+    // significa que el dispositivo esté suscrito: se comprueba id + optedIn.
+    const currentUserId = me.id;
+    getOneSignalInstance().then(async OneSignal => {
+      try {
+        await OneSignal.login(currentUserId);
+        const subscription = OneSignal.User && OneSignal.User.PushSubscription;
+        pushSubscribed = !!(subscription && subscription.id && subscription.optedIn === true);
+        console.info('[OneSignal] usuario vinculado al iniciar sesión:', {
+          externalId: OneSignal.User.externalId,
+          subscriptionId: subscription && subscription.id,
+          optedIn: subscription && subscription.optedIn,
+          profilePushEnabled: me && me.profile ? me.profile.push_enabled : null
+        });
+      } catch(e) { console.error('[OneSignal] login on boot:', e); }
+    }).catch(e => console.error('[OneSignal] SDK no disponible al iniciar sesión:', e));
     checkPwaInstallability();
     renderNotifBadge();
   } catch(err){
